@@ -3,6 +3,7 @@ import CtaBand from "@/components/CtaBand";
 import PostGrid from "@/components/PostGrid";
 import Reveal from "@/components/Reveal";
 import { PageHero } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { posts } from "@/lib/posts";
 
 export const metadata: Metadata = {
@@ -30,6 +31,12 @@ export default function ResourcesPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="resources"
+        heading="New articles and tax tips, a few times a year"
+        blurb="Plain-English answers to the questions that come up every filing season — sent when they are useful, not on a schedule."
+      />
 
       <CtaBand
         title="Questions the articles don't cover?"

@@ -3,6 +3,8 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { BulletList, PageHero, SectionHeading } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
+import Testimonials from "@/components/Testimonials";
 import { addOns, pricingPrinciples, tiers } from "@/lib/pricing";
 import { site } from "@/lib/site";
 
@@ -137,6 +139,23 @@ export default function PricingPage() {
           </Reveal>
         </div>
       </section>
+
+      {/*
+        Proof immediately after the price list. This is where a visitor decides
+        whether the number is worth it, and a flat quote reads very differently
+        alongside people saying the work was good.
+      */}
+      <Testimonials
+        limit={3}
+        eyebrow="Worth it?"
+        title="What people say after they've paid it"
+        intro="Every quote is flat and agreed before any work starts — here's what clients made of the result."
+        className="bg-ice"
+      />
+
+      <LeadCapture
+        source="pricing"
+      />
 
       <CtaBand
         title="Get your actual number"

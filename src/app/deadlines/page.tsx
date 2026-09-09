@@ -3,6 +3,7 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { deadlines, formatDeadline, keyFigures } from "@/lib/deadlines";
 
 export const metadata: Metadata = {
@@ -148,6 +149,12 @@ export default function DeadlinesPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="deadlines"
+        heading="Get the next deadline before it gets you"
+        blurb="Every date on this page, sent to your inbox a fortnight ahead. Quarterly estimates, filing dates, extension cut-offs. Free."
+      />
 
       <CtaBand
         title="Get ahead of the next one"

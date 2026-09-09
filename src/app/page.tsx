@@ -3,6 +3,7 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { BulletList, SectionHeading } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { deadlines, formatDeadline } from "@/lib/deadlines";
 import { services, site, testimonials } from "@/lib/site";
 
@@ -359,6 +360,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <LeadCapture
+        source="home"
+      />
 
       <CtaBand />
     </>

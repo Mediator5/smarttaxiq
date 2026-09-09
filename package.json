@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
     "@fontsource/plus-jakarta-sans": "^5.1.0",
     "@fontsource/inter": "^5.1.0",
     "next": "14.2.15",

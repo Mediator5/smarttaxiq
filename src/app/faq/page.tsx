@@ -4,6 +4,7 @@ import Accordion from "@/components/Accordion";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { PageHero } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { allFaqs, faqGroups } from "@/lib/faq";
 import { site } from "@/lib/site";
 
@@ -86,6 +87,10 @@ export default function FaqPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="faq"
+      />
 
       <CtaBand image="lashanda-headshot-polo.jpg" />
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { BulletList, PageHero, SectionHeading } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -178,6 +179,10 @@ export default function ProcessPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="process"
+      />
 
       <CtaBand
         title="Step one takes about fifteen minutes"

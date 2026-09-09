@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { services, site } from "@/lib/site";
+import { services, site, streetLine } from "@/lib/site";
 import Logo from "./Logo";
 
 const company = [
@@ -88,7 +88,13 @@ export default function Footer() {
                 </a>
               </li>
               <li className="text-white/60">{site.hours}</li>
-              <li className="text-white/60">{site.city}</li>
+              <li className="not-italic text-white/60">
+                <address className="not-italic">
+                  {streetLine}
+                  <br />
+                  {site.address.city}, {site.address.state} {site.address.zip}
+                </address>
+              </li>
             </ul>
             <Link href="/start" className="btn-gold mt-7 w-full sm:w-auto">
               File My Taxes
@@ -99,9 +105,26 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto flex w-full max-w-shell flex-col gap-4 px-5 py-7 text-[13px] text-white/45 sm:px-8 md:flex-row md:items-center md:justify-between">
-          <p>
-            © {year} {site.name}. All rights reserved.
-          </p>
+          <div className="space-y-1.5">
+            <p>
+              © {year} {site.parentLegalName}. All rights reserved.
+            </p>
+            {/*
+              SmartTaxIQ is a trading name. Stating the parent entity here is
+              both the correct legal position and the thing that lets Google
+              connect this domain to the Carter Cole profile and its reviews.
+            */}
+            <p>
+              {site.name} is the tax division of{" "}
+              <a
+                href={site.parentUrl}
+                className="text-white/70 underline underline-offset-2 transition hover:text-gold-300"
+              >
+                {site.parentLegalName}
+              </a>
+              .
+            </p>
+          </div>
           <p className="max-w-2xl md:text-right">
             Information on this site is general and does not constitute tax
             advice for your specific situation.

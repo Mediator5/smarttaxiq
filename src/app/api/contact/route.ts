@@ -1,13 +1,44 @@
 import { NextResponse } from "next/server";
+import { captureLead, readAttribution } from "@/lib/leads";
+import { saveContactSubmission } from "@/lib/store";
+import { autoReply, deliver, mailerConfigured } from "@/lib/mailer";
+
+export const dynamic = "force-dynamic";
 
 /**
  * Contact form endpoint.
  *
- * Right now this validates the submission and logs it, which means nothing is
- * lost but nothing is delivered either. To actually deliver mail, uncomment
- * the block at the bottom and set the environment variables — any SMTP
- * provider or transactional API works.
+ * This used to validate a submission, log a line, and throw it away — anyone
+ * who used the form left no record anywhere. It now does four things in
+ * order of how badly each one would be missed: stores the message, alerts the
+ * office by email and SMS, sends the visitor an acknowledgement, and adds
+ * them to the mailing list if they asked to be.
+ *
+ * Every one of those is individually optional and individually guarded. With
+ * no credentials configured the endpoint behaves as it always did and the
+ * visitor still gets a success response — but nothing is silently lost, which
+ * was the actual problem.
  */
+
+const TOPIC_LABEL: Record<string, string> = {
+  "new-return": "New tax return",
+  "existing-client": "Existing client",
+  notice: "IRS notice or letter",
+  business: "Business taxes",
+  other: "General enquiry",
+};
+
+// Small in-memory rate limit: 5 submissions per IP per 10 minutes.
+const hits = new Map<string, number[]>();
+function rateLimited(ip: string) {
+  const now = Date.now();
+  const win = 10 * 60 * 1000;
+  const list = (hits.get(ip) || []).filter((t) => now - t < win);
+  list.push(now);
+  hits.set(ip, list);
+  if (hits.size > 5000) hits.clear();
+  return list.length > 5;
+}
 
 const TOPIC_INBOX: Record<string, string> = {
   "new-return": "info@smarttaxiq.com",
@@ -20,6 +51,16 @@ const TOPIC_INBOX: Record<string, string> = {
 const MAX = { name: 120, email: 200, phone: 40, message: 4000 };
 
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { ok: false, error: "Too many messages. Please try again shortly." },
+      { status: 429 }
+    );
+  }
+
   let payload: Record<string, unknown>;
 
   try {
@@ -77,32 +118,63 @@ export async function POST(request: Request) {
   }
 
   const inbox = TOPIC_INBOX[topic] ?? TOPIC_INBOX.other;
+  const label = TOPIC_LABEL[topic] ?? TOPIC_LABEL.other;
+  const [firstName, ...rest] = name.split(/\s+/).filter(Boolean);
 
   // Never log the message body — it routinely contains tax details.
   console.log(
     `[contact] ${new Date().toISOString()} topic=${topic} route=${inbox} from=${email}`
   );
 
-  /*
-  // ---- To deliver by email, install nodemailer and uncomment ----
-  //   npm install nodemailer
-  //
-  // import nodemailer from "nodemailer";
-  //
-  // const transport = nodemailer.createTransport({
-  //   host: process.env.SMTP_HOST,
-  //   port: Number(process.env.SMTP_PORT ?? 587),
-  //   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  // });
-  //
-  // await transport.sendMail({
-  //   from: process.env.MAIL_FROM,
-  //   to: inbox,
-  //   replyTo: email,
-  //   subject: `Website enquiry — ${topic} — ${name}`,
-  //   text: `${name}\n${email}\n${phone}\n\n${message}`,
-  // });
-  */
+  // 1. Store it, if storage is configured. Guarded rather than awaited into
+  //    the response: a database blip must not tell a visitor their message
+  //    failed when the alert below will still reach the office.
+  try {
+    await saveContactSubmission({
+      firstName: firstName ?? name,
+      lastName: rest.join(" ") || null,
+      email,
+      phone: phone || null,
+      department: topic,
+      message,
+      routedTo: inbox,
+      ip,
+      userAgent: request.headers.get("user-agent"),
+    });
+  } catch (err) {
+    console.error("[contact] storage failed:", err);
+  }
+
+  // 2. Alert the office and, if they ticked the box, add them to the list.
+  //    A contact form is a service request — subscribing someone who did not
+  //    ask is how a sending domain earns complaints and loses deliverability.
+  await captureLead({
+    kind: "contact",
+    email,
+    firstName: firstName ?? name,
+    lastName: rest.join(" ") || undefined,
+    phone: phone || undefined,
+    topic: label,
+    message,
+    source: `contact-${topic}`,
+    page: typeof payload.page === "string" ? payload.page : "/contact",
+    utm: readAttribution(payload.attribution),
+    subscribe: payload.optIn === true,
+    extra: { "Routed to": inbox },
+  });
+
+  // 3. Acknowledge to the visitor. Failing to send this is not their problem
+  //    and must not turn into an error on a form that actually worked.
+  if (mailerConfigured()) {
+    const body = autoReply(firstName ?? name);
+    void deliver({
+      to: email,
+      subject: "We've got your message — SmartTaxIQ",
+      html: body.html,
+      text: body.text,
+      replyTo: inbox,
+    }).catch((err) => console.error("[contact] auto-reply failed:", err));
+  }
 
   return NextResponse.json({ ok: true });
 }

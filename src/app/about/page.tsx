@@ -4,7 +4,9 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { BulletList, PageHero, SectionHeading } from "@/components/Section";
-import { site, testimonials } from "@/lib/site";
+import LeadCapture from "@/components/LeadCapture";
+import Testimonials from "@/components/Testimonials";
+import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -65,6 +67,23 @@ export default function AboutPage() {
               </p>
               <p className="mt-4 text-[14.5px] leading-[1.7] text-ink/65">
                 Based in {site.city}, filing for clients in all 50 states.
+              </p>
+              {/*
+                The division statement belongs on the About page as well as in
+                the footer: this is the page people read when they are deciding
+                whether the practice is real, and naming the parent entity is
+                part of that answer.
+              */}
+              <p className="mt-4 border-t border-ink/10 pt-4 text-[14px] leading-[1.7] text-ink/65">
+                {site.name} is the tax division of{" "}
+                <a
+                  href={site.parentUrl}
+                  className="font-semibold text-ink underline decoration-gold-400 decoration-2 underline-offset-2 transition hover:text-gold-700"
+                >
+                  {site.parentLegalName}
+                </a>
+                , a Detroit practice offering tax, credit, business formation
+                and bookkeeping services since {site.founded}.
               </p>
             </div>
           </Reveal>
@@ -149,34 +168,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-20">
-        <div className="shell">
-          <SectionHeading
-            align="center"
-            eyebrow="In their words"
-            title="What clients say"
-          />
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {testimonials.map((t, i) => (
-              <Reveal key={t.name} delay={i * 70}>
-                <figure className="flex h-full flex-col rounded-2xl border border-ink/10 bg-white p-7 shadow-card">
-                  <blockquote className="flex-1 text-[15.5px] leading-[1.75] text-ink/80">
-                    &ldquo;{t.quote}&rdquo;
-                  </blockquote>
-                  <figcaption className="mt-6 border-t border-ink/10 pt-5">
-                    <span className="block text-[15px] font-bold">
-                      {t.name}
-                    </span>
-                    <span className="mt-0.5 block text-[13px] text-ink/50">
-                      {t.detail}
-                    </span>
-                  </figcaption>
-                </figure>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Shared component, so the quotes and the route to the live
+          reviews stay identical everywhere they appear. */}
+      <Testimonials limit={3} />
+
+      <LeadCapture
+        source="about"
+      />
 
       <CtaBand image="lashanda-gold-gown.jpg" />
     </>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import CtaBand from "@/components/CtaBand";
 import Reveal from "@/components/Reveal";
 import { BulletList, PageHero } from "@/components/Section";
+import LeadCapture from "@/components/LeadCapture";
 import { services } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -76,6 +77,10 @@ export default function ServicesPage() {
           </section>
         ))}
       </div>
+
+      <LeadCapture
+        source="services"
+      />
 
       <CtaBand
         title="Not sure which one you need?"

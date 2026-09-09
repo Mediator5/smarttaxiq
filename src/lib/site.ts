@@ -6,6 +6,15 @@
 
 export const site = {
   name: "SmartTaxIQ",
+  /**
+   * SmartTaxIQ is a trading name, not a company. Every statement of legal
+   * identity — the copyright line, schema markup, email footers — has to name
+   * the entity that actually exists.
+   */
+  parentLegalName: "Carter Cole & Associates LLC",
+  divisionStatement:
+    "SmartTaxIQ is the tax division of Carter Cole & Associates LLC.",
+  parentUrl: "https://cartercoleandassociates.com",
   tagline: "Smarter tax. Clearer answers.",
   description:
     "Licensed tax preparation, year-round planning and IRS notice help for individuals, freelancers and small businesses. File remotely from anywhere in the U.S.",
@@ -25,15 +34,39 @@ export const site = {
 
   city: "Detroit, Michigan",
   address: {
-    street: "[Address to be confirmed]",
+    street: "14701 Mack Ave",
+    suite: "Suite B",
     city: "Detroit",
     state: "MI",
-    zip: "[ZIP]",
+    zip: "48215",
     country: "US",
   },
+  /**
+   * One Google Business Profile serves the practice under both brands, so this
+   * is deliberately the same link the Carter Cole site uses. Two profiles
+   * would split the review count and halve the proof on each site.
+   */
+  googleReviewUrl: "https://g.page/r/CffT2ZqKpzmfECE/review",
+  googleMapsUrl: "https://g.page/r/CffT2ZqKpzmfECE",
 
   hours: "Monday – Thursday, 9:30am – 5:00pm ET",
   seasonHours: "January – April: extended hours, including Saturdays",
+
+  /**
+   * Calendly link for the free 30-minute consultation.
+   *
+   * The live link is the default, so the scheduler works on a fresh checkout
+   * with no environment set up at all. NEXT_PUBLIC_CALENDLY_URL overrides it
+   * per deployment — useful for pointing a staging build at a test event
+   * rather than putting real bookings in the calendar.
+   *
+   * Availability (Mon–Thu 9:30–5:00 ET) is configured in Calendly itself, not
+   * here: the event's schedule belongs with the calendar that has to honour
+   * it, and duplicating those hours in code would only let them drift.
+   */
+  calendlyUrl:
+    process.env.NEXT_PUBLIC_CALENDLY_URL ??
+    "https://calendly.com/lashandasmarttaxiq/30min",
 
   /** Live JotForm intake forms. */
   jotform: {
@@ -41,6 +74,16 @@ export const site = {
     business: "https://form.jotform.com/253285600052550",
   },
 } as const;
+
+/** "14701 Mack Ave, Suite B" */
+export const streetLine = `${site.address.street}, ${site.address.suite}`;
+
+/**
+ * "14701 Mack Ave, Suite B, Detroit, MI 48215" — the canonical one-line NAP.
+ * This string must stay character-identical to the one on the Carter Cole site
+ * and on the Google Business Profile; inconsistent NAP suppresses local rank.
+ */
+export const addressLine = `${streetLine}, ${site.address.city}, ${site.address.state} ${site.address.zip}`;
 
 export const nav = [
   { href: "/services", label: "Services" },
