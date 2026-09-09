@@ -152,3 +152,35 @@ export function readAttribution(
   }
   return Object.keys(out).length ? out : undefined;
 }
+
+/**
+ * Wait for background work, but never longer than `ms`.
+ *
+ * This exists because of how serverless hosting actually behaves. It is
+ * tempting to fire the Mailchimp sync and the alert off without awaiting them
+ * — the lead is already stored, so why make the visitor wait? On a long-lived
+ * Node server that reasoning is correct. On Vercel and every other serverless
+ * platform it is wrong: once the handler returns its response the function is
+ * frozen or torn down, and any promise still in flight is simply abandoned.
+ * No error, no log, no retry. The signup succeeds, the visitor gets their
+ * download, and the contact silently never reaches the list.
+ *
+ * So the work is awaited — but bounded, so a third party having a bad day
+ * cannot leave someone staring at a spinner. Normal case is a few hundred
+ * milliseconds; worst case the visitor waits `ms` and the request completes
+ * regardless, because storage already happened and is what actually matters.
+ */
+export async function settleWithin(
+  ms: number,
+  jobs: Promise<unknown>[]
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cap = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, ms);
+  });
+  try {
+    await Promise.race([Promise.allSettled(jobs).then(() => undefined), cap]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}

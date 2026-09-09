@@ -28,8 +28,14 @@ export const site = {
     role: "Founder & Lead Tax Preparer",
   },
 
-  phone: "810-493-6605",
-  phoneHref: "tel:+18104936605",
+  /**
+   * The business line — the same number the Carter Cole site and the Google
+   * Business Profile publish. This drives the sticky mobile call bar, which is
+   * the highest-converting element on the site: tax clients call, from phones,
+   * and this is the number they tap.
+   */
+  phone: "313-771-4400",
+  phoneHref: "tel:+13137714400",
   email: "info@smarttaxiq.com",
 
   city: "Detroit, Michigan",

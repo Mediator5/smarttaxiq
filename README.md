@@ -105,10 +105,25 @@ neither imports the other; what they share is the destination — the same
 Mailchimp audience, the same alert recipients, and optionally the same Supabase
 project — so they meet at the data rather than in the code.
 
-`src/lib/store.ts` is the one genuinely optional piece. Point `SUPABASE_URL`
-and `SUPABASE_SERVICE_ROLE_KEY` at the same project the other site uses and
-every lead from both brands appears in one dashboard; leave them blank and this
-site keeps no database at all, exactly as it did before.
+`src/lib/store.ts` is the one genuinely optional piece, and it is pointed at
+**the Carter Cole project** — the two websites deliberately share one database.
+
+That is not laziness, it is the point. `email` is unique per Supabase project,
+so a shared database means someone who takes the checklist on one site and
+files through the other is one person with one row and one token, rather than
+two records that never reconcile. It also means the admin dashboard on the
+Carter Cole site lists every lead from both brands, with `source` telling them
+apart — one place to look instead of two, which is the entire reason the lead
+system exists.
+
+There is no `supabase/` folder here on purpose. The schema lives in the Carter
+Cole project (`supabase/schema.sql`) and is applied once; a second copy in this
+repository would be a second thing to edit and a guaranteed source of drift
+between two codebases pointing at the same tables.
+
+Leave `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` blank and this site simply
+keeps no database, exactly as it did before — leads still reach Mailchimp and
+still raise an alert.
 
 ---
 

@@ -144,18 +144,47 @@ The key ends in the data centre it belongs to (`-us21`), and the code reads
 that suffix automatically — `MAILCHIMP_SERVER_PREFIX` exists only as an
 override for the rare account where it differs.
 
-### Add these two merge fields first
+### Add two audience fields first
 
-Audience → Settings → **Audience fields and |MERGE| tags** → add:
+"Merge fields" is Mailchimp's name for **the columns of your contact list**.
+Every audience starts with Email, First Name and Last Name. If you want to
+store anything else about a contact, the column has to exist before you can
+put anything in it.
 
-| Field label | Type | Tag |
-| --- | --- | --- |
-| Phone | Phone | `PHONE` |
-| Source | Text | `SOURCE` |
+The site sends two extra values that need columns:
 
-Without them the sync still works, but the phone number and the source get
-dropped on the way in — and the source is the field that makes the list worth
-segmenting later.
+| Column | Type | Merge tag | What goes in it |
+| --- | --- | --- | --- |
+| Phone Number | Phone | `PHONE` | **Already exists** in a new audience |
+| Source | Text | `SOURCE` | The one you have to create |
+
+A new Mailchimp audience already ships with Email, First Name, Last Name,
+Address, **Phone Number**, Birthday and Company. So the only one missing is
+Source.
+
+**To add it:** Audience → **Audience fields and *|MERGE|* tags** →
+**Create a new field** (top right) → type **Text** → field label `Source` →
+merge tag `SOURCE` → Save.
+
+A note on the Phone field: its type validates against the format
+`(###) ### - ####`, and visitors type numbers every other way. The site
+normalises US numbers into that shape before sending, so `810-493-6605`,
+`8104936605` and `+1 810 493 6605` all land correctly. A non-US number is
+passed through untouched rather than mangled.
+
+**If you skip this,** nothing breaks and no signup is lost. Mailchimp simply
+ignores a value it has no column for, so contacts still arrive — just without
+a phone number or a source, which is the field that makes the list worth
+segmenting later. It is a two-minute job that is annoying to backfill, because
+the information is gone by the time you notice.
+
+### One setting to leave alone
+
+While you are on that screen, do not tick **required** on any field except
+Email. Mailchimp rejects an API write that omits a required field, and the
+capture form on the SmartTaxIQ site asks for an email address and nothing
+else on purpose. The site already sends `skip_merge_validation` so this cannot
+silently kill your signups — but there is no reason to rely on that.
 
 ### The tags every contact arrives with
 
@@ -386,3 +415,25 @@ taking anything else down with them.
   details are one of the few things that measurably suppress local ranking.
 - **Answering fast.** The system's whole purpose is to get a lead in front of
   you within seconds. That only converts if someone acts on it.
+
+---
+
+## One database, two websites
+
+Both sites point at the **same Supabase project**. Worth knowing why, because
+it looks like something that could be split later and mostly shouldn't be:
+
+- `email` is unique *per project*. One database means a person who takes the
+  checklist on one site and files through the other is one record with one
+  token, not two that never reconcile.
+- The admin dashboard at `/admin/subscribers` then lists every lead from both
+  brands, with `source` telling them apart — one place to look, which is the
+  whole point of the exercise.
+- Supabase pauses free-plan projects with low activity over a rolling 7-day
+  window. One project carrying both sites' traffic is far less likely to go
+  quiet than two carrying half each — and a paused project means writes fail.
+
+The schema (`supabase/schema.sql`, in the Carter Cole project) is applied once,
+to that project. There is no second copy in the SmartTaxIQ repository on
+purpose: two copies of a schema for one database is a guaranteed source of
+drift.

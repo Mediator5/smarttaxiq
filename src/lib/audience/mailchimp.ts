@@ -30,6 +30,27 @@ export function configured() {
   return Boolean(API_KEY() && AUDIENCE_ID() && serverPrefix());
 }
 
+/**
+ * Mailchimp's Phone field type validates against a format — the audience shows
+ * it as `(###) ### - ####`. Our forms collect whatever someone types, which is
+ * usually `810-493-6605` or `8104936605`, neither of which matches.
+ *
+ * With `skip_merge_validation` the contact is accepted either way, so a badly
+ * shaped number can never cost us the lead — but it can quietly fail to land
+ * in the field, which is the same as not having collected it. Normalising here
+ * means the number actually shows up on the contact.
+ *
+ * Anything that isn't a plain US number is passed through untouched rather
+ * than mangled: better a value Mailchimp might reject than a wrong one it
+ * accepts.
+ */
+function formatPhone(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  const local = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (local.length !== 10) return raw.trim();
+  return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
+}
+
 /** Mailchimp addresses a member by the MD5 of their lowercased email. */
 function subscriberHash(email: string) {
   return crypto
@@ -71,7 +92,23 @@ export async function sync(input: AudienceInput): Promise<AudienceResult> {
 
   try {
     const res = await api(
-      `/lists/${AUDIENCE_ID()}/members/${subscriberHash(email)}`,
+      // `skip_merge_validation=true` is deliberate and worth explaining.
+      //
+      // Mailchimp lets you mark a field "required" in the audience settings,
+      // and then rejects any API write that omits it with a 400. That is
+      // reasonable for someone typing into a Mailchimp signup form; it is
+      // wrong here. The capture form on the SmartTaxIQ site asks for an email
+      // address and nothing else, on purpose — every extra box costs more
+      // signups than the data is worth — so if First Name were ever marked
+      // required in the audience, every single one of those signups would be
+      // rejected, silently, and the only clue would be a line in a server log.
+      //
+      // A lead with just an email address is still a lead. We would rather
+      // store an incomplete contact than lose a real one to a validation rule
+      // set in a different tool for a different purpose.
+      `/lists/${AUDIENCE_ID()}/members/${subscriberHash(
+        email
+      )}?skip_merge_validation=true`,
       {
         method: "PUT",
         body: JSON.stringify({
@@ -80,7 +117,7 @@ export async function sync(input: AudienceInput): Promise<AudienceResult> {
           merge_fields: {
             ...(input.firstName ? { FNAME: input.firstName } : {}),
             ...(input.lastName ? { LNAME: input.lastName } : {}),
-            ...(input.phone ? { PHONE: input.phone } : {}),
+            ...(input.phone ? { PHONE: formatPhone(input.phone) } : {}),
             ...(input.source ? { SOURCE: input.source } : {}),
           },
         }),

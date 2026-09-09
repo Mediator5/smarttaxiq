@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { captureLead, readAttribution } from "@/lib/leads";
+import { captureLead, readAttribution, settleWithin } from "@/lib/leads";
 import { saveContactSubmission } from "@/lib/store";
 import { autoReply, deliver, mailerConfigured } from "@/lib/mailer";
 
@@ -167,13 +167,15 @@ export async function POST(request: Request) {
   //    and must not turn into an error on a form that actually worked.
   if (mailerConfigured()) {
     const body = autoReply(firstName ?? name);
-    void deliver({
-      to: email,
-      subject: "We've got your message — SmartTaxIQ",
-      html: body.html,
-      text: body.text,
-      replyTo: inbox,
-    }).catch((err) => console.error("[contact] auto-reply failed:", err));
+    await settleWithin(4000, [
+      deliver({
+        to: email,
+        subject: "We've got your message — SmartTaxIQ",
+        html: body.html,
+        text: body.text,
+        replyTo: inbox,
+      }).catch((err) => console.error("[contact] auto-reply failed:", err)),
+    ]);
   }
 
   return NextResponse.json({ ok: true });
