@@ -26,7 +26,8 @@ export type LeadAlert = {
     | "contact"
     | "intake-personal"
     | "intake-business"
-    | "booking";
+    | "booking"
+    | "application";
   name?: string;
   email?: string;
   phone?: string;
@@ -50,6 +51,7 @@ const LABELS: Record<LeadAlert["kind"], string> = {
   "intake-personal": "Personal tax intake",
   "intake-business": "Business tax intake",
   booking: "Consultation booked",
+  application: "Preparer application",
 };
 
 /** Leads worth interrupting someone's day for. A newsletter signup is not. */
@@ -58,6 +60,7 @@ const SMS_WORTHY: LeadAlert["kind"][] = [
   "intake-personal",
   "intake-business",
   "booking",
+  "application",
 ];
 
 function recipients(): string[] {

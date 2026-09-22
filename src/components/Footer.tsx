@@ -126,6 +126,13 @@ export default function Footer() {
             </p>
           </div>
           <p className="max-w-2xl md:text-right">
+            <Link
+              href="/privacy"
+              className="underline underline-offset-2 transition hover:text-gold-300"
+            >
+              Privacy policy
+            </Link>
+            <span className="mx-2 text-white/25">·</span>
             Information on this site is general and does not constitute tax
             advice for your specific situation.
           </p>
