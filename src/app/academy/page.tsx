@@ -18,23 +18,57 @@ import SignInForm from "@/components/academy/SignInForm";
 export const dynamic = "force-dynamic";
 
 export default async function AcademyPage() {
-  const ready = academyConfigured() && sessionSecretConfigured();
+  const hasDb = academyConfigured();
+  const hasSecret = sessionSecretConfigured();
+  const ready = hasDb && hasSecret;
   const student = ready ? await currentStudent() : null;
 
   /* ---------------------------------------------------------- not set up -- */
   if (!ready) {
+    /**
+     * Name what is actually missing, rather than saying "something is".
+     *
+     * The first version of this page said only that configuration was
+     * incomplete, which meant the first real deployment turned into guesswork
+     * across three environment variables. Variable NAMES are not secrets —
+     * they are already in .env.example — and this page stops rendering the
+     * moment the values arrive, so the disclosure is both trivial and
+     * temporary. Values are never shown, only whether each one is present.
+     */
+    const missing = [
+      !hasDb && "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
+      !hasSecret && "ACADEMY_SESSION_SECRET (at least 24 characters)",
+    ].filter(Boolean) as string[];
+
+    console.error("[academy] not configured — missing:", missing.join(" · "));
+
     return (
       <section className="py-20">
         <div className="shell max-w-[640px]">
           <span className="eyebrow">Tax Academy</span>
           <h1 className="mt-3 text-[34px] leading-[1.1]">Not set up yet</h1>
           <p className="lede mt-4">
-            The Academy needs its database and session secret configured before
-            anyone can sign in. If you are seeing this on the live site, the
-            environment variables have not reached Vercel yet.
+            The Academy needs a few environment variables before anyone can
+            sign in. This deployment is missing:
           </p>
-          <p className="mt-4 text-[15px] text-ink/65">
-            Setup steps are in <code>ACADEMY-SETUP.md</code>.
+          <ul className="mt-5 space-y-2">
+            {missing.map((m) => (
+              <li
+                key={m}
+                className="rounded-lg bg-[#fbeeea] px-4 py-3 font-mono text-[13.5px] text-[#a8341c]"
+              >
+                {m}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-[15px] leading-relaxed text-ink/65">
+            Add them in Vercel under Settings → Environment Variables with
+            Production ticked, then <strong>redeploy</strong> — Vercel only
+            reads environment variables at build time, so an existing
+            deployment will not pick them up.
+          </p>
+          <p className="mt-3 text-[15px] text-ink/65">
+            Full steps are in <code>ACADEMY-SETUP.md</code>.
           </p>
         </div>
       </section>

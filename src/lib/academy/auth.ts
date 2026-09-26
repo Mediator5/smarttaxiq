@@ -35,8 +35,17 @@ const CODE_TTL_MINUTES = 15;
  *  enough that the endpoint is not a free mail cannon. */
 const CODES_PER_HOUR = 5;
 
+/**
+ * Whether the session secret is usable — not merely present.
+ *
+ * This deliberately applies the SAME length rule as secret() below. An earlier
+ * version only checked for a non-empty value, so a too-short secret passed the
+ * readiness check and then threw on first use, which is a much worse failure
+ * than the setup page.
+ */
 export function sessionSecretConfigured() {
-  return Boolean(process.env.ACADEMY_SESSION_SECRET);
+  const value = process.env.ACADEMY_SESSION_SECRET;
+  return Boolean(value && value.length >= 24);
 }
 
 function secret() {
