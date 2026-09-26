@@ -3,6 +3,20 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // The Academy course body is a .html file read with fs at render time, not
+  // an import, so Next's output file tracing does not see it and it would be
+  // missing from the serverless bundle on Vercel — the route would build
+  // cleanly and then render an empty course in production. Naming it here is
+  // the documented fix.
+  // Next 14 still keeps this under `experimental`; it moved to the top level
+  // in Next 15. Putting it at the top level here is silently ignored, which
+  // builds fine and then serves an empty course in production.
+  experimental: {
+    outputFileTracingIncludes: {
+      "/academy": ["./src/content/academy/**"],
+    },
+  },
+
   // The old SmartTaxIQ site's URLs, so inbound links and anything Google
   // still has indexed lands on a real page instead of a 404.
   async redirects() {

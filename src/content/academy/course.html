@@ -1,0 +1,1072 @@
+<!--
+  The Academy course body — the nine modules, exactly as taught.
+
+  This is deliberately markup rather than TSX. It is one long piece of written
+  teaching, it is edited as prose, and it is the same content the printed
+  workbook and the instructor pack are built from; turning nine modules of
+  headings, tables and scenarios into JSX would make every future edit a code
+  change and would guarantee the three versions drift apart.
+
+  It is rendered with dangerouslySetInnerHTML from a server component. That is
+  safe here and nowhere near user input: this file ships in the repository, it
+  is reviewed in pull requests like any other source file, and nothing a
+  student types ever reaches it. The quiz and progress behaviour attaches to
+  the `.quiz` / `.qq` / `.reveal` markup from the client, exactly as the
+  standalone version does.
+
+  Structure the code depends on — do not rename without updating
+  src/components/academy/CourseBody.tsx and src/content/academy/modules.ts:
+
+    section.m#m{N}                one module
+    div.quiz[data-quiz="{N}"]     that module's knowledge check
+    div.qq[data-a="{letter}"]     one question, with the correct option
+    div.fb                        the explanation, revealed after checking
+    button.reveal                 a scenario's show/hide answer control
+-->
+<!-- ================= M0 ================= -->
+    <section class="m" id="m0"><div class="m-top">
+      <div class="m-tag">Module 0 · Week 1</div>
+      <h2>Professional Requirements &amp; Responsibilities</h2>
+      <p class="m-why">Before you learn a single line of a tax return, two things have to be true: you are legally allowed to be paid for this work, and you understand what happens when it goes wrong.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Have your own PTIN</li>
+          <li>Know what you may and may not do as a paid preparer</li>
+          <li>Be able to say, in dollars, what one careless return costs</li>
+          <li>Know the rules for handling client information</li>
+        </ul>
+      </div>
+
+      <h3>Your PTIN — do this first</h3>
+      <p>A <strong>PTIN</strong> is a Preparer Tax Identification Number. The IRS issues it to <em>you</em>, personally. The rule is simple and there is no way around it: <strong>anyone who prepares, or helps prepare, a federal tax return for money must have one.</strong></p>
+      <p>Not the firm — you. It goes on every return you touch.</p>
+      <div class="key"><strong class="kl">Your first assignment</strong>
+        <p>Register at the IRS Tax Professional portal. It takes about fifteen minutes. Check the current fee on the portal before you start — it has changed before. Send your confirmation to your trainer <strong>before Friday of Week 1</strong>.</p>
+        <p>Two things people get wrong. Don't use the paper form — it takes six weeks and you do not have six weeks. And PTINs run by calendar year: you are preparing returns in <strong>January 2027</strong>, so you need a <strong>2027</strong> PTIN.</p>
+      </div>
+
+      <h3>The rules you work under</h3>
+      <p>Paid preparers are governed by a Treasury rulebook called <strong>Circular 230</strong>. You don't need to memorise it. You do need to live by five things:</p>
+      <ol class="b">
+        <li><strong>Due diligence is constant.</strong> It isn't a form you fill in at the end. It's the questions you ask all the way through.</li>
+        <li><strong>You cannot sign a return you know is wrong.</strong> Not "probably fine". Not "the client insisted".</li>
+        <li><strong>Your fee can never be a share of the refund.</strong> If a client offers you a cut, the answer is no.</li>
+        <li><strong>Keep your records</strong> — three years, and we'll show you where.</li>
+        <li><strong>Don't overstate what you are.</strong> You are a tax preparer, not an Enrolled Agent or a CPA. You cannot represent someone in an audit, and you must never imply you can.</li>
+      </ol>
+
+      <h3>What one careless return actually costs</h3>
+      <p>This is the part people skim. Please don't.</p>
+      <p>There is a penalty — <code>IRC §6695(g)</code> — for failing to do your due diligence. Not for getting the tax wrong: for not doing the work of checking. And it does not apply once per return. It applies <strong>once per credit</strong>:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>On the same return</th><th>Penalties</th></tr></thead>
+          <tbody>
+            <tr><td>Earned Income Tax Credit</td><td class="n">one</td></tr>
+            <tr><td>Child Tax Credit family</td><td class="n">one</td></tr>
+            <tr><td>American Opportunity Credit</td><td class="n">one</td></tr>
+            <tr><td>Head of Household status</td><td class="n">one</td></tr>
+            <tr><td><strong>One return, all four</strong></td><td class="n"><strong>4 ×</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="warn"><strong class="kl">Look it up. Don't recall it.</strong>
+        <p>The dollar amount is adjusted for inflation every year. Whatever figure you memorise today will be out of date before you use it — and a preparer who confidently quotes last year's number is exactly the preparer this module is trying not to produce.</p>
+        <p>Check it on <strong>IRS.gov/Form8867</strong> each October and write it on your figures sheet. What you keep is the shape: <strong>four times, per return, plus the firm.</strong></p>
+      </div>
+      <div class="warn"><strong class="kl">And it doesn't stop with you</strong>
+        <p>The IRS can assess <strong>the firm</strong> for your failures, and can suspend the firm from e-filing altogether. One preparer being careless can shut down everyone's season.</p>
+        <p>That is why the December exam is real, and why nobody meets a client before passing it. It isn't about doubting you. It's that the stakes are genuinely this high.</p>
+      </div>
+
+      <h3>Client information</h3>
+      <p>You will be handling Social Security numbers, income, addresses and children's names. Treat every file like it's your own.</p>
+      <ul class="b">
+        <li>Never on personal email, personal cloud storage, or an unlocked phone</li>
+        <li>Working from home? Only on the device the firm has approved, and lock it when you step away</li>
+        <li>Never discuss a client's return where anyone can overhear — including family</li>
+        <li>Lost a device, or sent a file to the wrong person? <strong>Tell your trainer within the hour.</strong> You will not be in trouble for reporting it fast. You will be for hiding it.</li>
+      </ul>
+      <p>You'll read and sign the firm's security plan before you see a real client file.</p>
+
+      <div class="quiz" data-quiz="0">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass — you can retake this.</p>
+
+        <div class="qq" data-a="b">
+          <p>1. A client offers you 10% of their refund as your fee. What do you do?</p>
+          <label class="opt"><input type="radio" name="q0_1" value="a"> Accept — it's a common arrangement</label>
+          <label class="opt"><input type="radio" name="q0_1" value="b"> Decline — a fee can never be based on the refund</label>
+          <label class="opt"><input type="radio" name="q0_1" value="c"> Accept if the client puts it in writing</label>
+          <div class="fb" hidden>Contingent fees based on refund size are prohibited.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>2. You're preparing a return in January 2027. Which year's PTIN do you need?</p>
+          <label class="opt"><input type="radio" name="q0_2" value="a"> 2025</label>
+          <label class="opt"><input type="radio" name="q0_2" value="b"> 2026 — the tax year of the return</label>
+          <label class="opt"><input type="radio" name="q0_2" value="c"> 2027 — the year you're preparing it in</label>
+          <div class="fb" hidden>PTINs run on the calendar year you are working in, not the tax year of the return.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>3. Due diligence failed on EITC, the Child Tax Credit and Head of Household on one return. What's the exposure?</p>
+          <label class="opt"><input type="radio" name="q0_3" value="a"> One penalty — the rule is one per return</label>
+          <label class="opt"><input type="radio" name="q0_3" value="b"> Two penalties — Head of Household isn't covered</label>
+          <label class="opt"><input type="radio" name="q0_3" value="c"> Three penalties — and the firm can be assessed too</label>
+          <div class="fb" hidden>One per failed credit, and Head of Household counts as one of the four. Three failures, three penalties, and the firm carries exposure as well. Look up the current amount rather than recalling it.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>4. You only help with part of a return and don't sign it. Do you need a PTIN?</p>
+          <label class="opt"><input type="radio" name="q0_4" value="a"> Yes — assisting for compensation requires one</label>
+          <label class="opt"><input type="radio" name="q0_4" value="b"> No — only the signing preparer needs one</label>
+          <label class="opt"><input type="radio" name="q0_4" value="c"> Only if you helped with more than half</label>
+          <div class="fb" hidden>Preparing <em>or assisting in preparing</em> for compensation requires a PTIN.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>5. You email a client's return from your personal Gmail because the office system is slow. What happened?</p>
+          <label class="opt"><input type="radio" name="q0_5" value="a"> Nothing — the client got their return</label>
+          <label class="opt"><input type="radio" name="q0_5" value="b"> A data security breach that must be reported immediately</label>
+          <label class="opt"><input type="radio" name="q0_5" value="c"> Fine as long as you delete it afterwards</label>
+          <div class="fb" hidden>Client data never travels on personal accounts. Report it straight away.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M1 ================= -->
+    <section class="m" id="m1"><div class="m-top">
+      <div class="m-tag">Module 1 · Weeks 1–2</div>
+      <h2>The 1040, End to End</h2>
+      <p class="m-why">Every return you ever prepare is this one form. Learn its shape now and everything afterwards has somewhere to sit.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Walk a client through a 1040 and explain what each part does</li>
+          <li>Read a W-2 and know where every figure goes</li>
+          <li>Decide whether someone has to file — and whether they should anyway</li>
+          <li>Complete a simple return on your own</li>
+        </ul>
+      </div>
+
+      <h3>A tax return is a story in five movements</h3>
+      <p>Don't memorise line numbers. Learn the shape:</p>
+      <ol class="b">
+        <li><strong>Who you are</strong> — name, Social Security number, filing status, who else is in the household</li>
+        <li><strong>What came in</strong> — wages, self-employment, everything else</li>
+        <li><strong>What comes off</strong> — adjustments, then the standard deduction (or itemised, which is rarer than you'd think)</li>
+        <li><strong>What's owed</strong> — the tax, then credits that reduce it</li>
+        <li><strong>What's already been paid</strong> — withholding and refundable credits. The difference is the refund, or the bill.</li>
+      </ol>
+      <p>When you meet something new later — a Schedule C, the EITC, a Detroit return — ask which movement it belongs to. It always belongs to one of them.</p>
+
+      <h3>The W-2</h3>
+      <p>Most of your clients have one, and their whole return turns on it. The boxes that matter most:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Box</th><th>What it is</th><th>Why you care</th></tr></thead>
+          <tbody>
+            <tr><td class="n">1</td><td>Federal taxable wages</td><td>The income figure on the return</td></tr>
+            <tr><td class="n">2</td><td>Federal tax withheld</td><td>The main driver of the refund</td></tr>
+            <tr><td class="n">3 &amp; 5</td><td>Social Security and Medicare wages</td><td>Often higher than Box 1 — see below</td></tr>
+            <tr><td class="n">12</td><td>Coded items</td><td>Retirement, health coverage, and more</td></tr>
+            <tr><td class="n">15–17</td><td>State wages and withholding</td><td>Feeds the Michigan return</td></tr>
+            <tr><td class="n">18–20</td><td>Local wages and withholding</td><td><strong>Detroit.</strong> Miss this and you miss a whole return</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="key"><strong class="kl">Why Box 1 and Box 3 differ</strong>
+        <p>Money put into a 401(k) comes out of Box 1 but not out of Box 3 — you don't pay income tax on it now, but you do pay Social Security tax. Health premiums taken pre-tax reduce both.</p>
+        <p>A client who asks "why does it say I earned two different amounts?" is asking about this. Now you can answer.</p>
+      </div>
+
+      <h3>Who has to file — and who should anyway</h3>
+      <p>Whether someone is <em>required</em> to file depends mostly on whether their income is above the standard deduction for their status.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Filing status</th><th>Standard deduction · TY2026</th></tr></thead>
+          <tbody>
+            <tr><td>Single / Married filing separately</td><td class="n">$16,100</td></tr>
+            <tr><td>Married filing jointly</td><td class="n">$32,200</td></tr>
+            <tr><td>Head of household</td><td class="n">$24,150</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="key"><strong class="kl">The more important point</strong>
+        <p>Plenty of people who <em>don't have to</em> file absolutely <em>should</em>.</p>
+        <p>Someone who earned $9,400 and has two children isn't required to file. They may also be owed several thousand dollars, because refundable credits and withheld tax only come back if a return is filed.</p>
+        <p>You will meet this client. Telling them they don't have to file, and leaving it there, is the wrong answer.</p>
+      </div>
+
+      <div class="try"><strong class="tl">Try it</strong>
+        <p class="q">A client's W-2 shows Box 1 of $38,000 and Box 3 of $41,500. She wants to know which one is her "real" salary, and why they're different. What do you tell her?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Answer</b>
+          <p>Both are real — they measure different things. Her gross pay was $41,500. She put $3,500 into a retirement plan, which comes out before income tax is calculated, so her <em>taxable</em> wage is $38,000. Social Security tax is still charged on the full amount, which is why Box 3 didn't drop.</p>
+          <p>Short version for the client: "You earned $41,500. You saved $3,500 of it into your retirement plan before tax, so you're only taxed on $38,000."</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-quiz="1">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass.</p>
+
+        <div class="qq" data-a="b">
+          <p>1. Which W-2 boxes tell you a Detroit city return may be needed?</p>
+          <label class="opt"><input type="radio" name="q1_1" value="a"> 1 and 2</label>
+          <label class="opt"><input type="radio" name="q1_1" value="b"> 18, 19 and 20</label>
+          <label class="opt"><input type="radio" name="q1_1" value="c"> 15, 16 and 17</label>
+          <div class="fb" hidden>18–20 are the local boxes. 15–17 are state.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>2. A client earned $9,400 and has two children. What do you tell her?</p>
+          <label class="opt"><input type="radio" name="q1_2" value="a"> She doesn't need to file</label>
+          <label class="opt"><input type="radio" name="q1_2" value="b"> She must file — it's the law at any income</label>
+          <label class="opt"><input type="radio" name="q1_2" value="c"> She isn't required to, but should — she may be owed refundable credits</label>
+          <div class="fb" hidden>Not required, but refundable credits are only paid out if a return is filed.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>3. What is the TY2026 standard deduction for Head of Household?</p>
+          <label class="opt"><input type="radio" name="q1_3" value="a"> $24,150</label>
+          <label class="opt"><input type="radio" name="q1_3" value="b"> $16,100</label>
+          <label class="opt"><input type="radio" name="q1_3" value="c"> $32,200</label>
+          <div class="fb" hidden>$24,150 — between Single and Married filing jointly.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. Box 1 is lower than Box 3. Give the most common reason.</p>
+          <label class="opt"><input type="radio" name="q1_4" value="a"> The employer made an error</label>
+          <label class="opt"><input type="radio" name="q1_4" value="b"> Pre-tax retirement contributions reduce Box 1 but not Box 3</label>
+          <label class="opt"><input type="radio" name="q1_4" value="c"> The client had two jobs</label>
+          <div class="fb" hidden>401(k) contributions reduce taxable wages but not Social Security wages.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>5. Where does a refundable credit sit in the five movements?</p>
+          <label class="opt"><input type="radio" name="q1_5" value="a"> With income — it's money coming in</label>
+          <label class="opt"><input type="radio" name="q1_5" value="b"> With deductions — it reduces taxable income</label>
+          <label class="opt"><input type="radio" name="q1_5" value="c"> With payments — it can create a refund beyond tax paid</label>
+          <div class="fb" hidden>Refundable credits are treated like payments, which is why they can produce a refund even when no tax was owed.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M2 ================= -->
+    <section class="m" id="m2"><div class="m-top">
+      <div class="m-tag">Module 2 · Week 3</div>
+      <h2>Filing Status</h2>
+      <p class="m-why">One decision, made in the first two minutes of the interview, that changes more money than almost anything else on the return. It is also something the IRS penalises you for getting wrong.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Apply the three Head of Household tests to a real family</li>
+          <li>Work out whether a separated client is "considered unmarried"</li>
+          <li>Know who counts as a qualifying person — and who doesn't</li>
+          <li>Understand why this is a due-diligence item</li>
+        </ul>
+      </div>
+
+      <h3>The rule that settles a third of all questions</h3>
+      <p><strong>Marital status is decided on 31 December.</strong> Not on average over the year. Not when they separated.</p>
+      <p>Divorced on 30 December? Unmarried for the entire year. Married on 30 December? Married for the entire year. Ask the date, every time.</p>
+
+      <h3>Head of Household — three tests, all required</h3>
+      <ol class="b">
+        <li><strong>Unmarried</strong> on 31 December — or "considered unmarried", which we'll come to</li>
+        <li><strong>Paid more than half</strong> the cost of keeping up the home for the year</li>
+        <li>A <strong>qualifying person</strong> lived with them for more than half the year</li>
+      </ol>
+      <p>All three. Not two out of three.</p>
+      <div class="key"><strong class="kl">What counts as "cost of keeping up a home"</strong>
+        <p><strong>Counts:</strong> rent or mortgage interest, property taxes, home insurance, utilities, repairs, and food eaten in the home.</p>
+        <p><strong>Doesn't count:</strong> clothing, education, medical care, holidays, or the value of the client's own work around the house.</p>
+        <p>One exception worth remembering: a <strong>dependent parent</strong> is a qualifying person even if they don't live with your client — as long as your client pays more than half the cost of the parent's home. A parent in a care home can still make someone Head of Household.</p>
+      </div>
+
+      <h3>"Considered unmarried"</h3>
+      <p>A client who is still married can sometimes still file Head of Household — but <strong>every one</strong> of these must be true:</p>
+      <ul class="b">
+        <li>They file a separate return</li>
+        <li>They paid more than half the cost of the home</li>
+        <li>Their spouse <strong>did not live in the home at any point during the last six months of the year</strong></li>
+        <li>The home was their child's main home for more than half the year</li>
+        <li>They can claim that child as a dependant</li>
+      </ul>
+      <div class="warn"><strong class="kl">This is where it's won or lost</strong>
+        <p>The six-month rule catches people out constantly. A spouse who moved out in <strong>September</strong> was in the home in July. That fails. The client is Married Filing Separately — no matter what they were told last year, and no matter how certain they are.</p>
+        <p>So ask for the <strong>date</strong> he or she left. And write it down.</p>
+      </div>
+
+      <h3>Why this is a due-diligence item</h3>
+      <p>Head of Household is covered by <code>Form 8867</code>, the same form as the credits. That means the due-diligence penalty applies here too — one more of the four.</p>
+      <p>"The client told me she was head of household" is not due diligence. Asking who lived in the home, for how many months, and who paid the bills — and recording the answers — is.</p>
+
+      <div class="try"><strong class="tl">Try it · 1 of 4</strong>
+        <p class="q">Denise lived with her boyfriend for all of 2026. She paid the entire rent and every utility bill; he contributed nothing. They have no children. He is not related to her. What's her filing status?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Single</b>
+          <p>She passes test 2 easily — she paid everything. But test 3 fails. A qualifying person for Head of Household has to be a <strong>relative</strong>. An unrelated partner can sometimes be claimed as a dependant, but someone who qualifies only by living in the home <strong>never</strong> makes your client Head of Household.</p>
+          <p class="miss">The trap: seeing "supported another adult, paid all the bills" and reaching for HOH. Paying is test 2. Test 3 is a different question entirely.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 2 of 4</strong>
+        <p class="q">Marcus's divorce was finalised on 18 December 2026. His nine-year-old daughter lived with him all year and he paid every bill in the house.</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Head of Household</b>
+          <p>Status is set on 31 December, so Marcus is unmarried for the whole year — even though he was married for eleven and a half months of it. He paid more than half the cost, and his daughter lived with him more than half the year. All three tests met.</p>
+          <p class="miss">The trap: treating him as married because he was married for most of the year.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 3 of 4</strong>
+        <p class="q">Angela's husband moved out on 12 September 2026 and hasn't been back. Their son lived with Angela all year and she pays the mortgage. She's certain she qualifies as Head of Household because "he's gone".</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Married filing separately</b>
+          <p>Angela was still married on 31 December, so she needs "considered unmarried". Her husband lived in the home during the last six months of the year — he was there through July, August and half of September. That test fails, so Head of Household isn't available.</p>
+          <p>Her options are Married Filing Separately, or Married Filing Jointly if her husband will sign.</p>
+          <p class="miss">The trap: the client's certainty. She isn't lying — she's just answering a different question. Ask for the date.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 4 of 4</strong>
+        <p class="q">Ruth is 58, unmarried, and has raised her seven-year-old grandson since 2023. He lives with her full time and she supports him entirely.</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Head of Household</b>
+          <p>A grandchild is a descendant of Ruth's child, so the relationship works. He lived with her all year and she paid more than half the cost of the home. All three tests met.</p>
+          <p>More importantly: Ruth should also be screened for the <strong>EITC</strong> and the <strong>Child Tax Credit</strong>. Grandparents raising grandchildren are routinely entitled to far more than they claim, usually because nobody asked.</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-quiz="2">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Six questions. 70% to pass.</p>
+
+        <div class="qq" data-a="c">
+          <p>1. On what date is marital status determined?</p>
+          <label class="opt"><input type="radio" name="q2_1" value="a"> The date they separated</label>
+          <label class="opt"><input type="radio" name="q2_1" value="b"> Whichever applied for most of the year</label>
+          <label class="opt"><input type="radio" name="q2_1" value="c"> 31 December</label>
+          <div class="fb" hidden>The last day of the tax year, always.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>2. Which qualifying person does <em>not</em> have to live with the taxpayer?</p>
+          <label class="opt"><input type="radio" name="q2_2" value="a"> A grandchild</label>
+          <label class="opt"><input type="radio" name="q2_2" value="b"> A dependent parent</label>
+          <label class="opt"><input type="radio" name="q2_2" value="c"> A full-time student child</label>
+          <div class="fb" hidden>A dependent parent — provided the client pays more than half the cost of the parent's home.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>3. A client's spouse moved out in July. Can she be "considered unmarried"?</p>
+          <label class="opt"><input type="radio" name="q2_3" value="a"> No — the spouse was in the home during the last six months</label>
+          <label class="opt"><input type="radio" name="q2_3" value="b"> Yes — he was gone by year end</label>
+          <label class="opt"><input type="radio" name="q2_3" value="c"> Yes, if she paid all the bills after he left</label>
+          <div class="fb" hidden>The spouse must not have lived there at any point in the last six months. July is inside that window.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. Is food eaten in the home part of the cost of keeping up a home?</p>
+          <label class="opt"><input type="radio" name="q2_4" value="a"> No — only housing costs count</label>
+          <label class="opt"><input type="radio" name="q2_4" value="b"> Yes — but clothing, education and medical care don't</label>
+          <label class="opt"><input type="radio" name="q2_4" value="c"> Only if the client keeps receipts</label>
+          <div class="fb" hidden>Food eaten in the home counts. Clothing, education and medical care do not.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>5. Does Form 8867 apply to Head of Household?</p>
+          <label class="opt"><input type="radio" name="q2_5" value="a"> No — it's only for credits</label>
+          <label class="opt"><input type="radio" name="q2_5" value="b"> Only if the client also claims EITC</label>
+          <label class="opt"><input type="radio" name="q2_5" value="c"> Yes — and the due-diligence penalty applies</label>
+          <div class="fb" hidden>HOH is a due-diligence item in its own right.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>6. An unrelated partner lives with your client, who supports them entirely. Does that make your client Head of Household?</p>
+          <label class="opt"><input type="radio" name="q2_6" value="a"> No — a qualifying person must be a relative</label>
+          <label class="opt"><input type="radio" name="q2_6" value="b"> Yes — they're a member of the household</label>
+          <label class="opt"><input type="radio" name="q2_6" value="c"> Yes, if they lived there all year</label>
+          <div class="fb" hidden>Someone who qualifies only by living in the home never supports HOH status.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M3 ================= -->
+    <section class="m" id="m3"><div class="m-top">
+      <div class="m-tag">Module 3 · Weeks 4–5 · the big one</div>
+      <h2>The Earned Income Tax Credit</h2>
+      <p class="m-why">The largest credit most of our clients will ever claim — up to <strong>$8,231</strong>. It's also the most audited item on the return and the one that carries the penalty. Take your time with this module.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Apply the four qualifying child tests without looking them up</li>
+          <li>Settle a dispute when two people claim the same child</li>
+          <li>Complete <code>Form 8867</code> and meet all four due-diligence requirements</li>
+          <li>Write notes that will still defend the return in two years</li>
+        </ul>
+      </div>
+
+      <h3>What "earned" means</h3>
+      <p>Earned income is money someone <strong>worked for</strong>: wages, salary, tips, and net profit from self-employment.</p>
+      <p>It is <em>not</em>: unemployment compensation, Social Security, child support, alimony, pensions, or investment income.</p>
+      <p>A client whose entire year was unemployment has no EITC. That's a hard conversation, and it's far better had at your desk than in a letter from the IRS eight months later.</p>
+      <div class="key"><strong class="kl">Three things that kill the credit outright</strong>
+        <ul class="b">
+          <li>Anyone on the return without a valid Social Security number</li>
+          <li>Investment income over <strong>$12,200</strong> — over by a single dollar and the whole credit is gone. There's no tapering.</li>
+          <li>The client is themselves someone else's qualifying child</li>
+        </ul>
+      </div>
+
+      <h3>The four tests — learn these as R-A-R-J</h3>
+      <ol class="b">
+        <li><strong>Relationship.</strong> Son, daughter, stepchild, foster child, brother, sister, half- or step-sibling — or a descendant of any of them. So grandchildren, nieces and nephews all count. A cousin does not.</li>
+        <li><strong>Age.</strong> Under 19 at year end and younger than your client; <em>or</em> under 24, a full-time student, and younger than your client; <em>or</em> any age if permanently and totally disabled.</li>
+        <li><strong>Residency.</strong> Lived with your client <strong>in the United States for more than half the year</strong>. Time away at school, in hospital, or on military service still counts as living at home.</li>
+        <li><strong>Joint return.</strong> The child didn't file a joint return — unless it was purely to claim back withheld tax.</li>
+      </ol>
+
+      <h3>What it's worth</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Children</th><th>Max credit</th><th>Income ceiling · single or HOH</th><th>Ceiling · joint</th></tr></thead>
+          <tbody>
+            <tr><td>None</td><td class="n">$664</td><td class="n">$19,540</td><td class="n">$26,820</td></tr>
+            <tr><td>One</td><td class="n">$4,427</td><td class="n">$51,593</td><td class="n">$58,863</td></tr>
+            <tr><td>Two</td><td class="n">$7,316</td><td class="n">$58,629</td><td class="n">$65,899</td></tr>
+            <tr><td>Three or more</td><td class="n">$8,231</td><td class="n">$62,974</td><td class="n">$70,224</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>When two people claim the same child</h3>
+      <p>It happens constantly. The rules decide, in this order:</p>
+      <ol class="b">
+        <li>A <strong>parent</strong> beats a non-parent</li>
+        <li>Between two parents — whoever the child lived with for <strong>more nights</strong></li>
+        <li>If the nights are equal — the parent with the <strong>higher</strong> income</li>
+        <li>If neither is a parent — the higher income, provided it beats any parent who could have claimed</li>
+      </ol>
+      <p>In practice, if the other parent has already filed, your client's return will reject. That's a conversation, not a software problem, and we'll give you the words for it in Module 7.</p>
+
+      <h3>Your four due-diligence duties</h3>
+      <ol class="b">
+        <li><strong>Complete and file <code>Form 8867</code></strong> with the return</li>
+        <li><strong>Compute the credit</strong> using the worksheets — and keep them</li>
+        <li><strong>Knowledge.</strong> You may not rely on information you know, or should know, is wrong, inconsistent or incomplete. Where something doesn't add up you must ask, and <strong>write down what you asked and what they said</strong></li>
+        <li><strong>Keep the records</strong> for three years</li>
+      </ol>
+      <div class="warn"><strong class="kl">Number 3 is where preparers actually get caught</strong>
+        <p>The test is simple: <em>does this story hold together?</em></p>
+        <p>Someone reporting $13,800 of cash cleaning income with no expenses at all — no supplies, no petrol — landing exactly where the credit peaks, is a story that needs a question asked of it. Not because they're dishonest. Because you're required to ask.</p>
+      </div>
+
+      <h3>Notes that hold up</h3>
+      <p>Two years from now you will not remember this client. Your note has to. Write it like this:</p>
+      <div class="key">
+        <p><em>"14 Feb — asked how many months D. lived with client in 2026. Client said Jan–Aug. Produced school enrolment letter showing client's address. Copy kept."</em></p>
+        <p>Fifteen seconds to write. Settles the whole question later.</p>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 1 of 4</strong>
+        <p class="q">Keisha and Terrance aren't married and share custody of their daughter. In 2026 she stayed with Keisha for seven months and Terrance for five. Both want to claim her. Terrance earns $48,000; Keisha earns $22,000. Who claims?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Keisha</b>
+          <p>Both are parents, so we go to the second rule: nights. The daughter lived with Keisha longer, so Keisha claims her. Income is irrelevant here — it only comes into play if the nights are equal.</p>
+          <p class="miss">The trap: jumping to income because it's the easier number to get hold of. Ask about nights first.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 2 of 4</strong>
+        <p class="q">Carl's son turned 19 in March 2026 and lived at home all year, working part time for $6,200. Can Carl claim him for EITC?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">It depends entirely on one question you must ask</b>
+          <p><strong>Was he a full-time student for at least five months of the year?</strong></p>
+          <p>If yes — he's under 24, a student, and younger than Carl, so the age test passes and he can be a qualifying child.</p>
+          <p>If no — he's 19 and not a student. The age test fails. He is not a qualifying child for EITC.</p>
+          <p class="miss">The trap: not asking at all. This single question is worth thousands of dollars. Ask it, record the answer, and ask to see the enrolment letter.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 3 of 4</strong>
+        <p class="q">Yolanda's nephew came to live with her in August 2026 when his mother became unwell, and was still there at the end of the year.</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">No EITC on the nephew for 2026</b>
+          <p>A nephew passes the relationship test — he's a descendant of Yolanda's sibling. But August to December is five months, and the test is <strong>more than half the year</strong>. Residency fails.</p>
+          <p>He may well qualify next year. This year he doesn't.</p>
+          <p class="miss">The trap: rounding months up to get over the line. More than half the year means more than six months. Write down the month he arrived.</p>
+        </div>
+      </div>
+
+      <div class="try"><strong class="tl">Try it · 4 of 4</strong>
+        <p class="q">A new client reports $13,800 of cash income from house cleaning, no expenses at all, and two qualifying children. The figure lands right where the credit peaks. She has no records of any kind. What do you do?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Ask, document — and be ready to decline</b>
+          <p>A cleaning business with zero expenses isn't consistent with how that work is actually done. There are always supplies, and usually travel.</p>
+          <p>Your duty is to make reasonable inquiries and record them: How many clients? How often? What do you buy? How do you get there? How did you arrive at that figure?</p>
+          <p>If the answers are credible, prepare the return and keep the notes. If they aren't, <strong>you don't sign it.</strong> That is an uncomfortable thing to do and it is the job.</p>
+          <p class="miss">This exact pattern is the most common EITC penalty case there is. If you remember one scenario from this module, make it this one.</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-quiz="3">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Seven questions. 70% to pass.</p>
+
+        <div class="qq" data-a="b">
+          <p>1. What do the four qualifying child tests stand for?</p>
+          <label class="opt"><input type="radio" name="q3_1" value="a"> Residency, Age, Rate, Joint</label>
+          <label class="opt"><input type="radio" name="q3_1" value="b"> Relationship, Age, Residency, Joint return</label>
+          <label class="opt"><input type="radio" name="q3_1" value="c"> Relationship, Address, Refund, Jurisdiction</label>
+          <div class="fb" hidden>R-A-R-J.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>2. Is unemployment compensation earned income for EITC?</p>
+          <label class="opt"><input type="radio" name="q3_2" value="a"> Yes — it's taxable income</label>
+          <label class="opt"><input type="radio" name="q3_2" value="b"> Yes, if it was the client's only income</label>
+          <label class="opt"><input type="radio" name="q3_2" value="c"> No — it isn't earned</label>
+          <div class="fb" hidden>Taxable, but not earned. No EITC comes from it.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>3. Two parents; the child lived with each exactly the same number of nights. Who claims?</p>
+          <label class="opt"><input type="radio" name="q3_3" value="a"> The parent with the higher income</label>
+          <label class="opt"><input type="radio" name="q3_3" value="b"> The parent with the lower income</label>
+          <label class="opt"><input type="radio" name="q3_3" value="c"> They split the credit</label>
+          <div class="fb" hidden>Nights first; higher income only as the tie-break. The credit is never split.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. A client's investment income is $12,240. What happens to the EITC?</p>
+          <label class="opt"><input type="radio" name="q3_4" value="a"> It's reduced slightly</label>
+          <label class="opt"><input type="radio" name="q3_4" value="b"> It's disallowed entirely</label>
+          <label class="opt"><input type="radio" name="q3_4" value="c"> No effect — the limit applies to earned income</label>
+          <div class="fb" hidden>Over the $12,200 limit by any amount and the whole credit goes.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>5. A child lived with the taxpayer from 1 February to 31 December. Does residency pass?</p>
+          <label class="opt"><input type="radio" name="q3_5" value="a"> No — not the full year</label>
+          <label class="opt"><input type="radio" name="q3_5" value="b"> Only with a school record</label>
+          <label class="opt"><input type="radio" name="q3_5" value="c"> Yes — eleven months is more than half the year</label>
+          <div class="fb" hidden>The test is more than half the year, not the whole year.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>6. How long must due-diligence records be kept?</p>
+          <label class="opt"><input type="radio" name="q3_6" value="a"> Three years</label>
+          <label class="opt"><input type="radio" name="q3_6" value="b"> One year</label>
+          <label class="opt"><input type="radio" name="q3_6" value="c"> Seven years</label>
+          <div class="fb" hidden>Three years.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>7. A client's figures look inconsistent but she insists they're right. What does the knowledge requirement oblige you to do?</p>
+          <label class="opt"><input type="radio" name="q3_7" value="a"> Accept it — the client signs the return, not you</label>
+          <label class="opt"><input type="radio" name="q3_7" value="b"> Make reasonable inquiries and record the questions and answers</label>
+          <label class="opt"><input type="radio" name="q3_7" value="c"> File it and flag it to the IRS afterwards</label>
+          <div class="fb" hidden>Ask, document, and decline to sign if the answers aren't credible.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M4 ================= -->
+    <section class="m" id="m4"><div class="m-top">
+      <div class="m-tag">Module 4 · Week 6</div>
+      <h2>Side Hustles and Schedule C</h2>
+      <p class="m-why">Rideshare, hair, cleaning, resale, contracting. A large and growing share of our clients, and the place where the EITC and self-employment tax collide.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Know when income belongs on a Schedule C</li>
+          <li>Identify real business expenses — and turn down the rest</li>
+          <li>Explain self-employment tax to someone who's never paid it</li>
+          <li>Tell a business from a hobby</li>
+        </ul>
+      </div>
+
+      <h3>The form the money arrived on doesn't decide anything</h3>
+      <p><code>1099-NEC</code>, <code>1099-K</code>, an app payout, a personal cheque, cash in an envelope — if the work was a business, it all lands on a Schedule C.</p>
+      <p><strong>Cash income is reportable whether or not anyone issued a form.</strong> Clients often genuinely don't know this. Say it plainly and without judgement.</p>
+
+      <h3>Expenses</h3>
+      <p>The standard is <em>ordinary and necessary</em>. For our clients that usually means supplies, mileage, phone, a share of home costs, contract labour, and licences.</p>
+      <p>Mileage is the big one and the one that gets challenged. The client needs a log. Commuting — home to the first job of the day — is <strong>not</strong> deductible.</p>
+      <p>When a client has no records at all, reconstruct what can honestly be reconstructed, write down how you did it, and be straight about what can't be claimed.</p>
+
+      <h3>Self-employment tax</h3>
+      <p>Employees have Social Security and Medicare taken out, and the employer pays a matching amount. Someone self-employed pays <strong>both halves</strong>.</p>
+      <p>This is why a client who cleared $9,000 from a side hustle and expected a refund can end up owing. Half of it comes back as an adjustment, but the shock is real. Warn them, and start the conversation about estimated payments for next year.</p>
+
+      <div class="warn"><strong class="kl">Where this module and the EITC meet</strong>
+        <p>Net self-employment profit <em>is</em> earned income for the EITC. Which means claiming <strong>fewer</strong> expenses can make a client's refund bigger.</p>
+        <p>Clients work this out. Some will ask you directly to leave expenses off.</p>
+        <p>The answer is no. You report the expenses that exist. Doing otherwise is a false return, it's a due-diligence failure, and it is exactly what the IRS looks for.</p>
+      </div>
+
+      <div class="try"><strong class="tl">Try it</strong>
+        <p class="q">A rideshare client nets $8,400 and has 6,100 logged business miles. He notices that if he leaves the mileage off, his EITC goes up by more than the tax the extra profit costs him. He asks you to do that. What do you say?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">No — and here's how to say it</b>
+          <p>"I can't leave off expenses you actually had. The return has to show what really happened. If the IRS looks at this — and they do look at exactly this — it would be treated as a false return, and that lands on both of us."</p>
+          <p>Then give him something real: he's entitled to those miles, and you should make sure his log is good enough to survive a challenge.</p>
+          <p class="miss">The trap: a client who's polite, plausible and persistent. The answer doesn't change.</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-quiz="4">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass.</p>
+
+        <div class="qq" data-a="a">
+          <p>1. A client was paid $2,000 cash and no form was issued. Is it reportable?</p>
+          <label class="opt"><input type="radio" name="q4_1" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q4_1" value="b"> No — no form, no income</label>
+          <label class="opt"><input type="radio" name="q4_1" value="c"> Only above $600</label>
+          <div class="fb" hidden>Income is reportable regardless of paperwork.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>2. Is the drive from home to the first job of the day deductible?</p>
+          <label class="opt"><input type="radio" name="q4_2" value="a"> Yes — it's business travel</label>
+          <label class="opt"><input type="radio" name="q4_2" value="b"> No — that's commuting</label>
+          <label class="opt"><input type="radio" name="q4_2" value="c"> Only if they carry equipment</label>
+          <div class="fb" hidden>Commuting is never deductible.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>3. Why does a self-employed client pay more payroll-type tax than an employee on the same income?</p>
+          <label class="opt"><input type="radio" name="q4_3" value="a"> A higher rate applies to business income</label>
+          <label class="opt"><input type="radio" name="q4_3" value="b"> They lose the standard deduction</label>
+          <label class="opt"><input type="radio" name="q4_3" value="c"> They pay both the employee and the employer halves</label>
+          <div class="fb" hidden>No employer to pay the other half.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. A client asks you to omit expenses so their EITC is larger. What do you do?</p>
+          <label class="opt"><input type="radio" name="q4_4" value="a"> Do it — expenses are optional</label>
+          <label class="opt"><input type="radio" name="q4_4" value="b"> Decline and explain why</label>
+          <label class="opt"><input type="radio" name="q4_4" value="c"> Do it but note it on the file</label>
+          <div class="fb" hidden>Report actual expenses. Omitting them is a false return.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>5. Net profit from self-employment — is it earned income for EITC?</p>
+          <label class="opt"><input type="radio" name="q4_5" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q4_5" value="b"> No — only wages count</label>
+          <label class="opt"><input type="radio" name="q4_5" value="c"> Only with a 1099</label>
+          <div class="fb" hidden>Yes — which is exactly why the expense question matters so much.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M5 ================= -->
+    <section class="m" id="m5"><div class="m-top">
+      <div class="m-tag">Module 5 · Week 7</div>
+      <h2>Special Situations &amp; the New Deductions</h2>
+      <p class="m-why">Veterans, retirees and the unemployed — plus a brand-new set of deductions that nobody has filed before. Our clients are unusually likely to qualify for them.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Know which veterans' and retirement benefits are taxable</li>
+          <li>Handle unemployment income correctly</li>
+          <li>Screen every client for the new Schedule 1-A deductions</li>
+        </ul>
+      </div>
+
+      <h3>Veterans' benefits</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Benefit</th><th>Taxable?</th></tr></thead>
+          <tbody>
+            <tr><td>VA disability compensation</td><td><strong>No</strong> — don't report it</td></tr>
+            <tr><td>VA pension</td><td><strong>No</strong></td></tr>
+            <tr><td>GI Bill education benefits</td><td><strong>No</strong></td></tr>
+            <tr><td>Military retirement pay</td><td><strong>Yes</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Clients get this wrong in both directions — some report benefits they shouldn't, others leave off retirement pay they should. Ask specifically which they receive.</p>
+
+      <h3>Social Security and unemployment</h3>
+      <p><strong>Social Security</strong> is taxable on a sliding scale depending on other income — anywhere from none of it up to a maximum of 85%. A retiree who takes a large withdrawal from an IRA can accidentally make their Social Security taxable, and gets surprised twice.</p>
+      <p><strong>Unemployment</strong> is fully taxable, arrives on a <code>1099-G</code>, and withholding is optional — which most people decline. So a client who was unemployed often owes. And remember from Module 3: it isn't earned income, so it generates no EITC.</p>
+
+      <h3>Schedule 1-A — new this year</h3>
+      <p>A recent tax law created four new deductions, claimed on a new form. No preparer anywhere has years of experience with these, which means you start level with everyone else.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Deduction</th><th>Maximum</th><th>Starts phasing out above</th></tr></thead>
+          <tbody>
+            <tr><td>Qualified tips</td><td class="n">$25,000</td><td class="n">$150,000 · $300,000 joint</td></tr>
+            <tr><td>Qualified overtime</td><td class="n">$12,500 · $25,000 joint</td><td class="n">$150,000 · $300,000 joint</td></tr>
+            <tr><td>Senior deduction (65+)</td><td class="n">$6,000 · $12,000 both</td><td class="n">$75,000 · $150,000 joint</td></tr>
+            <tr><td>Car loan interest</td><td colspan="2">Check the current cap before filing</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="key"><strong class="kl">Four things to remember</strong>
+        <ul class="b">
+          <li><strong>Tips must have been reported</strong> to qualify. Unreported cash tips don't count.</li>
+          <li><strong>Overtime</strong> means the overtime premium — not every dollar earned during overtime hours.</li>
+          <li><strong>Married clients must file jointly</strong> to claim tips, overtime or the senior deduction.</li>
+          <li><strong>Ask every single client.</strong> People don't volunteer information they don't know is worth money.</li>
+        </ul>
+      </div>
+
+      <div class="quiz" data-quiz="5">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass.</p>
+
+        <div class="qq" data-a="b">
+          <p>1. Is VA disability compensation taxable?</p>
+          <label class="opt"><input type="radio" name="q5_1" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q5_1" value="b"> No</label>
+          <label class="opt"><input type="radio" name="q5_1" value="c"> Only above a threshold</label>
+          <div class="fb" hidden>Not taxable, and not reported on the return.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>2. Is military retirement pay taxable?</p>
+          <label class="opt"><input type="radio" name="q5_2" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q5_2" value="b"> No — it's a veterans' benefit</label>
+          <label class="opt"><input type="radio" name="q5_2" value="c"> Only for officers</label>
+          <div class="fb" hidden>Taxable — unlike VA disability compensation.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>3. A married tipped worker wants the tips deduction but files separately. Can she claim it?</p>
+          <label class="opt"><input type="radio" name="q5_3" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q5_3" value="b"> Yes, at half the cap</label>
+          <label class="opt"><input type="radio" name="q5_3" value="c"> No — joint filing is required</label>
+          <div class="fb" hidden>Married clients must file jointly for tips, overtime and the senior deduction.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. What's the most of someone's Social Security that can be taxable?</p>
+          <label class="opt"><input type="radio" name="q5_4" value="a"> 50%</label>
+          <label class="opt"><input type="radio" name="q5_4" value="b"> 85%</label>
+          <label class="opt"><input type="radio" name="q5_4" value="c"> 100%</label>
+          <div class="fb" hidden>85% is the ceiling.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>5. A client's cash tips were never reported to her employer. Can she claim the tips deduction on them?</p>
+          <label class="opt"><input type="radio" name="q5_5" value="a"> No — tips must have been reported</label>
+          <label class="opt"><input type="radio" name="q5_5" value="b"> Yes, if she can estimate them</label>
+          <label class="opt"><input type="radio" name="q5_5" value="c"> Yes — all tips qualify</label>
+          <div class="fb" hidden>Reported tips only.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M6 ================= -->
+    <section class="m" id="m6"><div class="m-top">
+      <div class="m-tag">Module 6 · Week 8</div>
+      <h2>Michigan &amp; Detroit Returns</h2>
+      <p class="m-why">A perfect federal return is half a job. Almost every client who walks through our door also needs a Michigan return, and most need a Detroit one.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Prepare an <code>MI-1040</code> from a finished federal return</li>
+          <li>Spot and claim the Homestead Property Tax Credit</li>
+          <li>Choose correctly between Detroit forms <code>5118</code>, <code>5119</code> and <code>5120</code></li>
+        </ul>
+      </div>
+
+      <h3>The Michigan return</h3>
+      <p>Michigan starts from the federal adjusted gross income, applies its own additions and subtractions, and taxes the result at a flat rate. Check the current rate on the figures sheet before you file — Michigan's rate has moved in recent years.</p>
+
+      <h3>The Homestead Property Tax Credit — don't miss this</h3>
+      <p>A refundable Michigan credit for residents whose property taxes are high relative to their income. <strong>Renters qualify too</strong> — a portion of rent is treated as property tax.</p>
+      <div class="key"><strong class="kl">Put this on every intake</strong>
+        <p>"Did you rent or own in 2026, and how much did you pay?"</p>
+        <p>This is the single most commonly missed item for a Detroit client on a modest income, and it's real money. The client will not raise it. You have to.</p>
+      </div>
+
+      <h3>Detroit — three forms, one question</h3>
+      <p>The question is <strong>where did they live</strong>:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Form</th><th>Who</th><th>What's taxed</th></tr></thead>
+          <tbody>
+            <tr><td class="n">5118</td><td>Lived in Detroit all year</td><td>All income, resident rate</td></tr>
+            <tr><td class="n">5119</td><td>Lived outside, worked in Detroit</td><td>Detroit-earned income only, lower rate</td></tr>
+            <tr><td class="n">5120</td><td>Moved in or out during the year</td><td>Split across both periods</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="warn"><strong class="kl">The trap</strong>
+        <p>No city tax withheld does <strong>not</strong> mean no city return is due. A Detroit resident whose employer didn't withhold city tax still owes it — and will owe it with interest if nobody notices.</p>
+      </div>
+
+      <div class="try"><strong class="tl">Try it</strong>
+        <p class="q">Andre lived in Detroit until 31 May 2026, then moved to Southfield. He worked at the same Detroit employer all year, and his W-2 shows Detroit withholding for the whole twelve months. Which form, and what should you be looking for?</p>
+        <button class="reveal" type="button">Show answer</button>
+        <div class="sol" hidden>
+          <b class="ans">Form 5120 — part-year resident</b>
+          <p>January to May he was a resident, taxed on everything at the resident rate. June to December he was a non-resident working in Detroit, taxed only on Detroit earnings at the lower rate.</p>
+          <p>His employer kept withholding at the resident rate all year. So Andre has very likely <strong>overpaid</strong> and is owed a city refund.</p>
+          <p class="miss">The trap: filing 5118 for the whole year because the withholding looks like a full-year resident. Ask when he moved — otherwise he loses money and never knows.</p>
+        </div>
+      </div>
+
+      <div class="quiz" data-quiz="6">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass.</p>
+
+        <div class="qq" data-a="b">
+          <p>1. A client lives in Warren and works downtown. Which Detroit form?</p>
+          <label class="opt"><input type="radio" name="q6_1" value="a"> 5118</label>
+          <label class="opt"><input type="radio" name="q6_1" value="b"> 5119 — non-resident</label>
+          <label class="opt"><input type="radio" name="q6_1" value="c"> 5120</label>
+          <div class="fb" hidden>Lives outside, works inside — non-resident.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>2. Can a renter claim the Michigan Homestead Property Tax Credit?</p>
+          <label class="opt"><input type="radio" name="q6_2" value="a"> Yes</label>
+          <label class="opt"><input type="radio" name="q6_2" value="b"> No — homeowners only</label>
+          <label class="opt"><input type="radio" name="q6_2" value="c"> Only in public housing</label>
+          <div class="fb" hidden>Renters qualify — part of the rent is treated as property tax.</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>3. A Detroit resident's W-2 shows no city withholding. Is a city return due?</p>
+          <label class="opt"><input type="radio" name="q6_3" value="a"> No — nothing was withheld</label>
+          <label class="opt"><input type="radio" name="q6_3" value="b"> Only if they earned over $10,000</label>
+          <label class="opt"><input type="radio" name="q6_3" value="c"> Yes — residents owe city tax either way</label>
+          <div class="fb" hidden>Withholding and liability are different things.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>4. A client moved out of Detroit in June. Which form?</p>
+          <label class="opt"><input type="radio" name="q6_4" value="a"> 5119</label>
+          <label class="opt"><input type="radio" name="q6_4" value="b"> 5120 — part-year resident</label>
+          <label class="opt"><input type="radio" name="q6_4" value="c"> 5118</label>
+          <div class="fb" hidden>Moved during the year — part-year.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>5. Which intake question catches the Homestead credit?</p>
+          <label class="opt"><input type="radio" name="q6_5" value="a"> "Did you rent or own, and how much did you pay?"</label>
+          <label class="opt"><input type="radio" name="q6_5" value="b"> "Do you own a car?"</label>
+          <label class="opt"><input type="radio" name="q6_5" value="c"> "Did you move this year?"</label>
+          <div class="fb" hidden>Ask it of every client, every time.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M7 ================= -->
+    <section class="m" id="m7"><div class="m-top">
+      <div class="m-tag">Module 7 · Week 9</div>
+      <h2>The Software and the Client</h2>
+      <p class="m-why">Knowing the law is half of it. The other half is the software, the conversation across the desk, and never promising something you can't deliver.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Take a return from new client to accepted, in our software</li>
+          <li>Read a rejection and explain it without alarming anyone</li>
+          <li>Run a full intake interview</li>
+          <li>Answer the refund question honestly</li>
+        </ul>
+      </div>
+
+      <h3>The software</h3>
+      <p>This module is hands-on. You'll create a client, enter the data, attach the forms, clear every diagnostic, transmit, and retrieve the acknowledgement. You'll do the whole cycle at least three times before Module 8.</p>
+
+      <h3>When a return rejects</h3>
+      <p>It will happen, often on your busiest day. The common ones:</p>
+      <ul class="b">
+        <li><strong>Name or SSN mismatch</strong> — usually a typo, sometimes a name change</li>
+        <li><strong>Dependant already claimed</strong> — someone else filed first</li>
+        <li><strong>Missing <code>1095-A</code></strong> — the client has Marketplace coverage and didn't bring the form</li>
+        <li><strong>Prior-year AGI mismatch</strong> — an identity check, not a mistake</li>
+      </ul>
+      <div class="key"><strong class="kl">The sentence you'll need most</strong>
+        <p>"Someone else has already claimed your daughter on their return."</p>
+        <p>That is a hard thing to hear, and often the first a parent knows of it. Practise saying it calmly. Then explain the rules from Module 3, find out who else may have claimed, and if your client is entitled, we file on paper and the IRS sorts it out.</p>
+        <p>Don't accuse anyone. Don't guess. Get your trainer if it gets difficult.</p>
+      </div>
+
+      <h3>The intake interview</h3>
+      <p>Don't just react to whatever paperwork lands on the desk. Ask the same questions every time:</p>
+      <ul class="b">
+        <li>Who lived in your home in 2026, and for how many months?</li>
+        <li>Who paid the rent or mortgage and the bills?</li>
+        <li>Did anything change — marriage, separation, a birth, a move, a death?</li>
+        <li>Any income without a form? Cash work, side jobs, apps?</li>
+        <li>Did you rent or own, and how much did you pay?</li>
+        <li>Do you get tips or overtime? Are you 65 or over?</li>
+        <li>Did anyone else claim your children last year?</li>
+      </ul>
+      <p>Seven questions. They take three minutes and they catch nearly everything.</p>
+
+      <div class="warn"><strong class="kl">Never promise a refund date</strong>
+        <p>The IRS doesn't guarantee one, and returns claiming EITC or the Additional Child Tax Credit are held by law until later in the season.</p>
+        <p>Say this instead: <em>"The IRS usually issues most refunds within 21 days of accepting the return, and returns with certain credits are held a bit longer."</em></p>
+        <p>Promise a date and you own every day it's late — and the client will call you, not the IRS.</p>
+      </div>
+
+      <div class="quiz" data-quiz="7">
+        <strong class="tl">Knowledge check</strong>
+        <p class="sub">Five questions. 70% to pass.</p>
+
+        <div class="qq" data-a="c">
+          <p>1. A client asks exactly when their refund will arrive. What do you say?</p>
+          <label class="opt"><input type="radio" name="q7_1" value="a"> Give your best estimate of the date</label>
+          <label class="opt"><input type="radio" name="q7_1" value="b"> "Within 21 days, guaranteed"</label>
+          <label class="opt"><input type="radio" name="q7_1" value="c"> The IRS's typical timeframe, noting credit-related holds — never a date</label>
+          <div class="fb" hidden>Never a specific date.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>2. The return rejects because the dependant is already claimed. First step?</p>
+          <label class="opt"><input type="radio" name="q7_2" value="a"> Remove the child and file</label>
+          <label class="opt"><input type="radio" name="q7_2" value="b"> Check your client is genuinely entitled, explain the rules, then file on paper if so</label>
+          <label class="opt"><input type="radio" name="q7_2" value="c"> Tell them to contact the other parent and come back</label>
+          <div class="fb" hidden>Verify entitlement, explain, and file on paper if your client is right.</div>
+        </div>
+
+        <div class="qq" data-a="a">
+          <p>3. Which question catches unreported side income?</p>
+          <label class="opt"><input type="radio" name="q7_3" value="a"> "Any income without a form? Cash work, side jobs, apps?"</label>
+          <label class="opt"><input type="radio" name="q7_3" value="b"> "Did you bring all your W-2s?"</label>
+          <label class="opt"><input type="radio" name="q7_3" value="c"> "Do you have a business?"</label>
+          <div class="fb" hidden>Ask about the money, not the paperwork — clients don't think of app payouts as "a business".</div>
+        </div>
+
+        <div class="qq" data-a="c">
+          <p>4. A client has Marketplace health coverage but didn't bring the form. What's missing?</p>
+          <label class="opt"><input type="radio" name="q7_4" value="a"> W-2</label>
+          <label class="opt"><input type="radio" name="q7_4" value="b"> 1099-G</label>
+          <label class="opt"><input type="radio" name="q7_4" value="c"> 1095-A</label>
+          <div class="fb" hidden>Without it the return can't be completed correctly and will reject.</div>
+        </div>
+
+        <div class="qq" data-a="b">
+          <p>5. You're not confident about a return in front of you. What's the right move?</p>
+          <label class="opt"><input type="radio" name="q7_5" value="a"> Do your best — you've been trained</label>
+          <label class="opt"><input type="radio" name="q7_5" value="b"> Escalate to an experienced preparer</label>
+          <label class="opt"><input type="radio" name="q7_5" value="c"> Ask the client what the last preparer did</label>
+          <div class="fb" hidden>Escalating is correct professional behaviour, not failure.</div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="check" type="button">Check my answers</button>
+          <span class="score"></span>
+        </div>
+      </div>
+    </div></section>
+
+    <!-- ================= M8 ================= -->
+    <section class="m" id="m8"><div class="m-top">
+      <div class="m-tag">Module 8 · Week 10</div>
+      <h2>Practice Lab</h2>
+      <p class="m-why">Four complete returns, built from messy piles of paper, the way they actually arrive. Then the final.</p>
+
+      <div class="goals"><strong>By the end you will</strong>
+        <ul class="b">
+          <li>Complete a full federal, Michigan and Detroit return from raw documents</li>
+          <li>Handle an interview with a client who isn't being clear</li>
+          <li>Know when to stop and ask for help</li>
+        </ul>
+      </div>
+
+      <h3>The four returns</h3>
+      <ul class="b">
+        <li><strong>Lab 1</strong> — Single parent, two children, one W-2 plus rideshare income. Detroit resident, renting. Federal, state, city, EITC, Child Tax Credit, Homestead.</li>
+        <li><strong>Lab 2</strong> — Separated client whose spouse left in October, one child, disputed filing status. The right answer is Married Filing Separately and you have to be willing to say so.</li>
+        <li><strong>Lab 3</strong> — Retired veteran, 68. VA disability, military retirement, Social Security and a part-time tipped job. Schedule 1-A applies.</li>
+        <li><strong>Lab 4</strong> — Grandparent raising two grandchildren, moved out of Detroit in July, small cash cleaning income with partial records.</li>
+      </ul>
+
+      <h3>The difficult interview</h3>
+      <p>Your trainer will play a client who wants a bigger refund, is vague about who lived where, and mentions that "the last place just put it through".</p>
+      <p>You'll be assessed on whether you ask the right questions, write down the answers, and are willing to say no. All three matter.</p>
+
+      <h3>When to stop and ask</h3>
+      <p>In your first season you do <strong>not</strong> handle these alone:</p>
+      <ul class="b">
+        <li>IRS notices and letters</li>
+        <li>Identity theft</li>
+        <li>Unfiled returns from previous years</li>
+        <li>Anything involving a company or partnership</li>
+        <li>Anything at all you're unsure about</li>
+      </ul>
+      <p>Asking for help is the correct professional response. It is not a mark against you, and nobody here will treat it as one.</p>
+
+      <div class="key"><strong class="kl">Your first fifteen returns</strong>
+        <p>Every new preparer's first fifteen returns are reviewed by an experienced preparer before they're transmitted. Review carries on until two batches in a row come back clean.</p>
+        <p>This is support, not suspicion. Everyone here went through it.</p>
+      </div>
+
+      <h3>The final exam</h3>
+      <p>Sat between 14 and 18 December. Two hours. You may use the figures sheet and the forms — that's what you'll have in January.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Part</th><th>Covers</th><th>Weight</th><th>Needed</th></tr></thead>
+          <tbody>
+            <tr><td class="n">A</td><td>Filing status — six fact patterns</td><td class="n">30%</td><td class="n">80%</td></tr>
+            <tr><td class="n">B</td><td>EITC eligibility — six fact patterns</td><td class="n">30%</td><td class="n">80%</td></tr>
+            <tr><td class="n">C</td><td>One complete return</td><td class="n">25%</td><td class="n">70%</td></tr>
+            <tr><td class="n">D</td><td>Ethics and due diligence</td><td class="n">15%</td><td class="n">70%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="warn"><strong class="kl">Why A and B need more</strong>
+        <p>Filing status and the EITC are where the penalties are, where the audits happen, and where the firm's own licence is on the line. Being right seven times out of ten isn't enough there.</p>
+        <p>You get one retake, at least seven days later, with different scenarios. Most people who need it pass it.</p>
+      </div>
+    </div></section>
