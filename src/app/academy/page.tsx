@@ -156,12 +156,20 @@ export default async function AcademyPage() {
           </div>
           <div className="flex items-center gap-4">
             {student.role === "instructor" && (
-              <Link
-                href="/academy/instructor"
-                className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-              >
-                Instructor view
-              </Link>
+              <>
+                <Link
+                  href="/academy/instructor"
+                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+                >
+                  Instructor view
+                </Link>
+                <Link
+                  href="/academy/roster"
+                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+                >
+                  Roster
+                </Link>
+              </>
             )}
             <SignOutButton />
           </div>

@@ -97,6 +97,11 @@ export const nav = [
   { href: "/pricing", label: "Pricing" },
   { href: "/deadlines", label: "Deadlines" },
   { href: "/resources", label: "Resources" },
+  // The Academy is for the seasonal preparer cohort, not for tax clients.
+  // It sits in the nav so trainees can find it without hunting for a link;
+  // it is invitation-gated, noindex, and disallowed in robots.txt, so being
+  // listed here costs nothing in search and gives away nothing.
+  { href: "/academy", label: "Academy" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;

@@ -90,6 +90,33 @@ create table if not exists academy_progress (
 create index if not exists academy_progress_student_idx
   on academy_progress (student_id);
 
+-- ------------------------------------------------------- access requests ---
+-- Somebody reached the sign-in page, was told their address is not on the
+-- roster, and asked to be added.
+--
+-- This is NOT the roster and nothing here grants access. It is an inbox: the
+-- instructor reads it, decides, and runs the insert into academy_students
+-- herself. Keeping the two tables apart is the point — there is no code path
+-- anywhere that turns a request into an enrolment.
+create table if not exists academy_access_requests (
+  id         uuid primary key default gen_random_uuid(),
+  email      text not null,
+  name       text not null,
+  note       text,
+  created_at timestamptz not null default now(),
+  -- Set when the instructor has dealt with it, either way. Requests do not
+  -- disappear when handled; a declined one staying visible is a feature.
+  handled_at timestamptz,
+  ip         text
+);
+
+create index if not exists academy_access_requests_open_idx
+  on academy_access_requests (created_at desc)
+  where handled_at is null;
+
+alter table academy_access_requests enable row level security;
+-- Same as the other three: RLS on, no policies, server-only via service role.
+
 -- --------------------------------------------------------------- lockdown ---
 alter table academy_students    enable row level security;
 alter table academy_login_codes enable row level security;

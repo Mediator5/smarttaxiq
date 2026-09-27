@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
-import { academyConfigured, getCohort } from "@/lib/academy/store";
+import {
+  academyConfigured,
+  getCohort,
+  getPendingAccessRequests,
+} from "@/lib/academy/store";
 import { PASS_MARK, quizModules } from "@/content/academy/modules";
 
 /**
@@ -40,7 +44,10 @@ export default async function InstructorPage() {
   const viewer = await currentStudent();
   if (!viewer || viewer.role !== "instructor") notFound();
 
-  const cohort = await getCohort(viewer.cohort);
+  const [cohort, requests] = await Promise.all([
+    getCohort(viewer.cohort),
+    getPendingAccessRequests(),
+  ]);
 
   return (
     <section className="py-10 sm:py-14">
@@ -57,23 +64,37 @@ export default async function InstructorPage() {
               stays red for a week is the signal — not a red score on the day.
             </p>
           </div>
-          <Link
-            href="/academy"
-            className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-          >
-            Back to the course
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/academy/roster"
+              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+            >
+              Manage roster
+              {requests.length > 0 && (
+                <span className="ml-2 rounded-full bg-gold-100 px-2.5 py-1 text-[12px] font-bold text-gold-700 no-underline">
+                  {requests.length}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/academy"
+              className="text-[14.5px] text-ink/55 underline underline-offset-4 hover:text-ink"
+            >
+              The course
+            </Link>
+          </div>
         </div>
 
         {cohort.length === 0 ? (
           <div className="card-quiet">
             <h2 className="text-[17px] font-bold">Nobody enrolled yet</h2>
             <p className="mt-2 text-[15.5px] leading-relaxed text-ink/75">
-              Students appear here as soon as they are added to{" "}
-              <code>academy_students</code> with cohort{" "}
-              <strong>{viewer.cohort}</strong>. The insert is at the bottom of{" "}
-              <code>supabase/academy.sql</code>.
+              Students appear here as soon as you add them to cohort{" "}
+              <strong>{viewer.cohort}</strong>.
             </p>
+            <Link href="/academy/roster" className="btn-gold mt-5">
+              Add someone
+            </Link>
           </div>
         ) : (
           <>

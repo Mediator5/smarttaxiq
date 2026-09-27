@@ -125,18 +125,20 @@ It must pass before you push. If it does, push and let Vercel deploy.
 
 ## 5 · Enrol the five trainees
 
-Once the Meta campaign has produced them, in the Supabase SQL editor:
+Sign in as an instructor and go to **`/academy/roster`** — there is a link in
+the header. Add each person by name and email, pick Trainee or Instructor, and
+they are on. No SQL.
 
-```sql
-insert into academy_students (email, first_name, last_name, cohort)
-values
-  ('first@example.com',  'First',  'Trainee', '2026-fall'),
-  ('second@example.com', 'Second', 'Trainee', '2026-fall')
-on conflict (email) do update
-  set first_name = excluded.first_name,
-      last_name  = excluded.last_name,
-      cohort     = excluded.cohort;
-```
+That page also handles the other two jobs:
+
+- **Requests to join.** Somebody who reaches the sign-in page with an address
+  that is not enrolled is told so plainly, and offered a short form. Those
+  requests appear at the top of the roster page with an **Add to roster**
+  button, and an alert goes to `LEAD_NOTIFY_EMAIL`. Approving enrols them; it
+  does not email them, because at that point nobody has verified they own that
+  address — they prove it themselves with their first sign-in code.
+- **Withdrawing someone.** Never deletes. Progress is kept, access stops on
+  their next page load, and reinstating brings it all back.
 
 Then send them the link. There is nothing for them to set up and no account to
 create — they type their email, get a code, and they are in.

@@ -143,18 +143,30 @@ function newCode() {
 
 export type RequestCodeResult =
   | { ok: true }
-  | { ok: false; reason: "not-configured" | "throttled" | "send-failed" };
+  | {
+      ok: false;
+      reason: "not-enrolled" | "not-configured" | "throttled" | "send-failed";
+    };
 
 /**
  * Send a sign-in code, if the address is enrolled.
  *
- * Note what this returns for an address that is NOT on the roster: `ok: true`,
- * having sent nothing. That is deliberate. The honest-looking alternative —
- * "that email isn't enrolled" — turns the endpoint into a way to ask whether
- * any given person is training with us, which is nobody's business. The
- * student who genuinely mistypes their address gets a code that never arrives
- * and asks their trainer, which is a two-minute problem; the caller is told
- * plainly on screen that a code only arrives for enrolled addresses.
+ * An address that is NOT on the roster gets `not-enrolled`, and the page says
+ * so plainly.
+ *
+ * This reverses the original design, which returned `ok: true` and sent
+ * nothing, so that the endpoint could not be used to ask whether a given
+ * person trains here. That protection was worth less than it cost. What it
+ * actually bought: an attacker learns that one address among a cohort of five
+ * at a small Detroit firm is or is not enrolled. What it cost: a trainee who
+ * mistypes their own email — or whose address was entered slightly differently
+ * on the roster — sits watching an inbox for a message that will never come,
+ * with nothing on screen to suggest anything is wrong. That is the single most
+ * likely real failure in a ten-week course, and silence makes it invisible to
+ * the student AND to the trainer.
+ *
+ * The enumeration risk is mitigated instead where it belongs: per-IP rate
+ * limiting on the route, so the endpoint cannot be walked through a list.
  */
 export async function requestCode(
   email: string,
@@ -170,7 +182,7 @@ export async function requestCode(
     return { ok: false, reason: "not-configured" };
   }
 
-  if (!student) return { ok: true }; // see the note above
+  if (!student) return { ok: false, reason: "not-enrolled" };
 
   try {
     if ((await recentCodeCount(student.id)) >= CODES_PER_HOUR) {

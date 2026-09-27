@@ -280,6 +280,199 @@ export async function recordAttempt(input: {
   return data as ProgressRow;
 }
 
+/* -------------------------------------------------- access requests ------ */
+
+export type AccessRequest = {
+  id: string;
+  email: string;
+  name: string;
+  note: string | null;
+  created_at: string;
+  handled_at: string | null;
+};
+
+/**
+ * Record somebody asking to be added to the roster.
+ *
+ * Deliberately separate from academy_students: nothing in this codebase turns
+ * a request into an enrolment. The instructor reads it and runs the insert
+ * herself, which is the only reason it is safe to let anyone submit one.
+ *
+ * Duplicates are allowed rather than upserted. Somebody asking twice is
+ * information — usually that the first request was missed.
+ */
+export async function createAccessRequest(input: {
+  email: string;
+  name: string;
+  note?: string | null;
+  ip?: string | null;
+}): Promise<boolean> {
+  const supabase = db();
+  if (!supabase) return false;
+
+  const { error } = await supabase.from("academy_access_requests").insert({
+    email: normalizeEmail(input.email),
+    name: input.name.trim().slice(0, 120),
+    note: input.note?.trim().slice(0, 600) || null,
+    ip: input.ip ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+/** How many requests this address has filed in the last day, so one person
+ *  cannot fill the instructor's inbox by pressing the button repeatedly. */
+export async function recentRequestCount(email: string, withinMinutes = 1440) {
+  const supabase = db();
+  if (!supabase) return 0;
+
+  const since = new Date(Date.now() - withinMinutes * 60_000).toISOString();
+  const { count, error } = await supabase
+    .from("academy_access_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("email", normalizeEmail(email))
+    .gte("created_at", since);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** Open requests, newest first, for the instructor dashboard. */
+export async function getPendingAccessRequests(
+  limit = 25
+): Promise<AccessRequest[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_access_requests")
+    .select("id, email, name, note, created_at, handled_at")
+    .is("handled_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return (data as AccessRequest[]) ?? [];
+}
+
+/* ------------------------------------------------- managing the roster --- */
+
+/**
+ * Add somebody to the roster, or update the row that is already there.
+ *
+ * Enrolment is the one privileged write in this codebase, and the only caller
+ * is the instructor-gated roster route. Keeping it on conflict-update rather
+ * than insert means re-adding an address that was withdrawn reactivates it
+ * with its progress intact, which is what somebody re-enrolling after a break
+ * actually wants.
+ */
+export async function upsertStudent(input: {
+  email: string;
+  firstName: string;
+  lastName?: string | null;
+  role?: "student" | "instructor";
+  cohort: string;
+}): Promise<Student> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { data, error } = await supabase
+    .from("academy_students")
+    .upsert(
+      {
+        email: normalizeEmail(input.email),
+        first_name: input.firstName.trim().slice(0, 80),
+        last_name: input.lastName?.trim().slice(0, 80) || null,
+        role: input.role ?? "student",
+        cohort: input.cohort,
+        status: "active",
+      },
+      { onConflict: "email" }
+    )
+    .select("id, email, first_name, last_name, role, cohort, status")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Student;
+}
+
+/**
+ * Withdraw or reinstate somebody.
+ *
+ * Withdrawing never deletes. Their progress rows stay, which matters if a
+ * decision is reversed, and it takes effect on their next page load rather
+ * than whenever their session cookie happens to expire — currentStudent()
+ * re-reads the roster on every request for exactly this reason.
+ */
+export async function setStudentStatus(
+  id: string,
+  status: "active" | "withdrawn"
+) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { error } = await supabase
+    .from("academy_students")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/** Everyone on the roster, withdrawn included — the management view, as
+ *  opposed to getCohort() which is the teaching view. */
+export async function getRoster(): Promise<
+  (Student & { last_seen_at: string | null; created_at: string })[]
+> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_students")
+    .select(
+      "id, email, first_name, last_name, role, cohort, status, last_seen_at, created_at"
+    )
+    .order("role")
+    .order("first_name");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as (Student & {
+    last_seen_at: string | null;
+    created_at: string;
+  })[];
+}
+
+/** Close an access request, whether it was approved or turned down. Requests
+ *  are never deleted — a declined one staying on file is a feature. */
+export async function markRequestHandled(id: string) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { error } = await supabase
+    .from("academy_access_requests")
+    .update({ handled_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function getAccessRequestById(
+  id: string
+): Promise<AccessRequest | null> {
+  const supabase = db();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("academy_access_requests")
+    .select("id, email, name, note, created_at, handled_at")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return (data as AccessRequest) ?? null;
+}
+
 /* ------------------------------------------------------------- the cohort - */
 
 export type CohortRow = Student & {

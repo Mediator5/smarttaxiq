@@ -9,6 +9,7 @@ const company = [
   { href: "/deadlines", label: "Tax Deadlines" },
   { href: "/resources", label: "Resources" },
   { href: "/faq", label: "FAQ" },
+  { href: "/academy", label: "Tax Academy" },
   { href: "/contact", label: "Contact" },
 ];
 

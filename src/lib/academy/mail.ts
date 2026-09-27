@@ -95,3 +95,82 @@ ${addressLine} · ${site.phone}`;
     text,
   });
 }
+
+
+/**
+ * Tell the office that somebody has asked to be added to the roster.
+ *
+ * Goes to LEAD_NOTIFY_EMAIL, the same address that already receives contact
+ * and application alerts, so this needs no new configuration. Reply-to is set
+ * to the person asking, so answering them is one click rather than a
+ * copy-paste.
+ *
+ * Never throws. A request that reached the database is not lost just because
+ * the alert failed, and the person asking should not see an error for a
+ * back-office problem — the dashboard shows it either way.
+ */
+export async function sendAccessRequestAlert(input: {
+  email: string;
+  name: string;
+  note?: string | null;
+}) {
+  const to = process.env.LEAD_NOTIFY_EMAIL;
+  if (!to || !mailerConfigured()) {
+    console.warn(
+      "[academy] access request received but no alert sent — LEAD_NOTIFY_EMAIL or RESEND_API_KEY missing"
+    );
+    return;
+  }
+
+  const name = esc(input.name);
+  const email = esc(input.email);
+  const note = input.note ? esc(input.note) : "";
+
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#eef1f6">
+  <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+    <div style="padding:20px 26px;background:${INK}">
+      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;color:#fff">
+        Smart<span style="color:${GOLD}">TaxIQ</span>
+        <span style="font-size:13px;font-weight:400;color:rgba(255,255,255,.6)"> &nbsp;Tax Academy</span>
+      </p>
+    </div>
+    <div style="padding:26px">
+      <p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        <strong>${name}</strong> tried to sign in to the Academy and is not on
+        the roster. They have asked to be added.
+      </p>
+      <p style="margin:0 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:${MUTED}">Email</p>
+      <p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:16px;color:${INK}">${email}</p>
+      ${
+        note
+          ? `<p style="margin:0 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:${MUTED}">What they said</p>
+             <p style="margin:0 0 16px;padding:14px;background:#f2f5fa;border-radius:10px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${INK}">${note}</p>`
+          : ""
+      }
+      <p style="margin:22px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${MUTED}">
+        Nothing has been granted. To enrol them, add a row to
+        <code>academy_students</code>; the Instructor view lists every open
+        request with the exact statement to run.
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `${input.name} tried to sign in to the Academy and is not on the roster. They have asked to be added.
+
+Email: ${input.email}
+${input.note ? `\nWhat they said:\n${input.note}\n` : ""}
+Nothing has been granted. To enrol them, add a row to academy_students — the Instructor view lists every open request with the exact statement to run.`;
+
+  try {
+    await deliver({
+      to,
+      subject: `Academy access request — ${input.name}`,
+      html,
+      text,
+      replyTo: input.email,
+    });
+  } catch (err) {
+    console.error("[academy] access request alert failed to send:", err);
+  }
+}
