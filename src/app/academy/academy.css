@@ -334,3 +334,43 @@
 .academy table.cohort td.seen {
   font-size:12px; color:var(--muted);
 }
+
+/* ---------------------------------------------------------------------------
+   Instructor extras: the video and the note that sit at the top of a module.
+   Mounted into the server-rendered module markup by ModuleExtras.tsx, so these
+   rules are scoped like everything else here.
+   --------------------------------------------------------------------------- */
+.academy .mx-extras { margin: 22px 0 6px; max-width: var(--measure); }
+.academy .mx-lab {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; font-weight: 600; color: var(--gold);
+  margin: 0 0 8px;
+}
+.academy .mx-note {
+  background: var(--gold-wash); border-radius: 12px; padding: 15px 18px;
+  margin-bottom: 16px;
+}
+.academy .mx-note p:last-child { margin-bottom: 0; font-size: 15.5px; white-space: pre-wrap; }
+.academy .mx-video { margin-bottom: 4px; }
+.academy .mx-frame {
+  position: relative; aspect-ratio: 16 / 9; max-width: 100%;
+  border-radius: 12px; overflow: hidden; background: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+.academy .mx-frame iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+}
+.academy .mx-fallback { font-size: 15.5px; }
+.academy .mx-fallback a { color: var(--gold); font-weight: 600; }
+
+/* The notice board at the top of the course. */
+.academy .notices { margin: 0 0 30px; max-width: var(--measure); }
+.academy .notice {
+  background: var(--sunk); border-left: 3px solid var(--gold-bright);
+  border-radius: 0 12px 12px 0; padding: 15px 18px; margin-bottom: 10px;
+}
+.academy .notice p { margin: 0; font-size: 15.5px; line-height: 1.65; white-space: pre-wrap; }
+.academy .notice time {
+  display: block; margin-top: 9px; font-family: var(--mono);
+  font-size: 11px; color: var(--muted); letter-spacing: .05em;
+}

@@ -174,3 +174,92 @@ Nothing has been granted. To enrol them, add a row to academy_students — the I
     console.error("[academy] access request alert failed to send:", err);
   }
 }
+
+
+/**
+ * Email an announcement to the cohort.
+ *
+ * One message per student rather than one message to everybody: five trainees
+ * should not be able to see each other's addresses, and a reply should reach
+ * the instructor rather than the whole class. Sent sequentially, which is fine
+ * at this size and keeps us well inside Resend's rate limit.
+ *
+ * Never throws. The announcement is already saved and visible on the course
+ * page by the time this runs, so a failed send degrades to "posted but not
+ * emailed" — the caller reports the count and the page says what happened.
+ */
+export async function sendAnnouncement(input: {
+  recipients: { email: string; first_name: string }[];
+  body: string;
+  fromName: string;
+}): Promise<{ sent: number; failed: string[] }> {
+  if (!mailerConfigured()) {
+    console.warn("[academy] announcement not emailed — no mailer configured");
+    return { sent: 0, failed: input.recipients.map((r) => r.email) };
+  }
+
+  const url = `${siteUrl()}/academy`;
+  const failed: string[] = [];
+  let sent = 0;
+
+  // Preserve the paragraph breaks she typed; escape everything else.
+  const paras = input.body
+    .split(/\n{2,}/)
+    .map((p) => esc(p.trim()).replace(/\n/g, "<br>"))
+    .filter(Boolean);
+
+  for (const person of input.recipients) {
+    const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#eef1f6">
+  <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+    <div style="padding:20px 26px;background:${INK}">
+      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;color:#fff">
+        Smart<span style="color:${GOLD}">TaxIQ</span>
+        <span style="font-size:13px;font-weight:400;color:rgba(255,255,255,.6)"> &nbsp;Tax Academy</span>
+      </p>
+    </div>
+    <div style="padding:26px">
+      <p style="margin:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        ${esc(person.first_name)},
+      </p>
+      ${paras
+        .map(
+          (p) =>
+            `<p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">${p}</p>`
+        )
+        .join("")}
+      <p style="margin:26px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        ${esc(input.fromName)}
+      </p>
+      <p style="margin:24px 0 0;padding-top:18px;border-top:1px solid #e6eaf1;font-family:Helvetica,Arial,sans-serif;font-size:13.5px;line-height:1.65;color:${MUTED}">
+        This is also on the course page:
+        <a href="${url}" style="color:${INK}">${esc(url)}</a>
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+    const text = `${person.first_name},
+
+${input.body}
+
+${input.fromName}
+
+---
+This is also on the course page: ${url}`;
+
+    try {
+      await deliver({
+        to: person.email,
+        subject: `Tax Academy — a note from ${input.fromName}`,
+        html,
+        text,
+      });
+      sent += 1;
+    } catch (err) {
+      console.error(`[academy] announcement to ${person.email} failed:`, err);
+      failed.push(person.email);
+    }
+  }
+
+  return { sent, failed };
+}

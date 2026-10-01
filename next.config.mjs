@@ -14,6 +14,9 @@ const nextConfig = {
   experimental: {
     outputFileTracingIncludes: {
       "/academy": ["./src/content/academy/**"],
+      // The PDFs are read with fs from the download route, so they need naming
+      // here too or the route 500s in production with the files missing.
+      "/api/academy/materials/[slug]": ["./src/content/academy/files/**"],
     },
   },
 

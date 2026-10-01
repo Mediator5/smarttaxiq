@@ -356,6 +356,144 @@ export async function getPendingAccessRequests(
   return (data as AccessRequest[]) ?? [];
 }
 
+/* --------------------------------------------- modules: video and note --- */
+
+export type ModuleExtra = {
+  module_idx: number;
+  video_url: string | null;
+  video_title: string | null;
+  note: string | null;
+  updated_at: string;
+};
+
+export async function getModuleExtras(): Promise<ModuleExtra[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_modules")
+    .select("module_idx, video_url, video_title, note, updated_at")
+    .order("module_idx");
+
+  if (error) throw new Error(error.message);
+  return (data as ModuleExtra[]) ?? [];
+}
+
+/** Save a module's video and note. An empty string clears the field rather
+ *  than storing "", so removing a video is the same gesture as adding one. */
+export async function saveModuleExtra(input: {
+  moduleIdx: number;
+  videoUrl?: string | null;
+  videoTitle?: string | null;
+  note?: string | null;
+  byStudentId: string;
+}) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const clean = (v: string | null | undefined) => {
+    const t = (v ?? "").trim();
+    return t.length ? t.slice(0, 2000) : null;
+  };
+
+  const { error } = await supabase.from("academy_modules").upsert(
+    {
+      module_idx: input.moduleIdx,
+      video_url: clean(input.videoUrl),
+      video_title: clean(input.videoTitle),
+      note: clean(input.note),
+      updated_at: new Date().toISOString(),
+      updated_by: input.byStudentId,
+    },
+    { onConflict: "module_idx" }
+  );
+
+  if (error) throw new Error(error.message);
+}
+
+/* ------------------------------------------------------- announcements --- */
+
+export type Announcement = {
+  id: string;
+  body: string;
+  emailed_at: string | null;
+  created_at: string;
+  hidden: boolean;
+};
+
+export async function getAnnouncements(opts?: {
+  includeHidden?: boolean;
+  limit?: number;
+}): Promise<Announcement[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  let q = supabase
+    .from("academy_announcements")
+    .select("id, body, emailed_at, created_at, hidden")
+    .order("created_at", { ascending: false })
+    .limit(opts?.limit ?? 20);
+
+  if (!opts?.includeHidden) q = q.eq("hidden", false);
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data as Announcement[]) ?? [];
+}
+
+export async function createAnnouncement(input: {
+  body: string;
+  byStudentId: string;
+  emailed: boolean;
+}): Promise<Announcement> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { data, error } = await supabase
+    .from("academy_announcements")
+    .insert({
+      body: input.body.trim().slice(0, 4000),
+      created_by: input.byStudentId,
+      emailed_at: input.emailed ? new Date().toISOString() : null,
+    })
+    .select("id, body, emailed_at, created_at, hidden")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Announcement;
+}
+
+export async function setAnnouncementHidden(id: string, hidden: boolean) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { error } = await supabase
+    .from("academy_announcements")
+    .update({ hidden })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/** Active trainees' addresses, for emailing an announcement. Instructors are
+ *  left out — she does not need her own notices in her inbox. */
+export async function getStudentEmails(cohort: string): Promise<
+  { email: string; first_name: string }[]
+> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_students")
+    .select("email, first_name")
+    .eq("cohort", cohort)
+    .eq("status", "active")
+    .eq("role", "student");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { email: string; first_name: string }[];
+}
+
 /* ------------------------------------------------- managing the roster --- */
 
 /**

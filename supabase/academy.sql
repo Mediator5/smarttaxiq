@@ -117,6 +117,51 @@ create index if not exists academy_access_requests_open_idx
 alter table academy_access_requests enable row level security;
 -- Same as the other three: RLS on, no policies, server-only via service role.
 
+-- ------------------------------------------------------- module extras -----
+-- What the instructor can change about a module without a developer: a video
+-- and a short note to the class.
+--
+-- The module TEXT is not here. That lives in src/content/academy/course.html
+-- and is edited as source, because the quizzes depend on exact markup and a
+-- rich-text box over the top of that is a reliable way to break a knowledge
+-- check. Everything in this table is additive and safe to get wrong.
+create table if not exists academy_modules (
+  module_idx  int primary key,
+  -- A YouTube or Vimeo watch/share URL, pasted as copied. The page turns it
+  -- into an embed at render time rather than storing an embed URL, so a
+  -- pasted link that is slightly the wrong shape still works.
+  video_url   text,
+  video_title text,
+  -- Shown above the module body, for "watch this before Tuesday" and the like.
+  note        text,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references academy_students (id) on delete set null
+);
+
+-- ------------------------------------------------------- announcements -----
+-- One instructor writing to the whole cohort. Deliberately one-way: this is a
+-- notice board, not an inbox, because a half-built two-way messaging system
+-- that nobody checks is worse than no messaging at all.
+create table if not exists academy_announcements (
+  id         uuid primary key default gen_random_uuid(),
+  body       text not null,
+  -- Whether it was also emailed, and when. Null means it only ever appeared
+  -- on the course page.
+  emailed_at timestamptz,
+  created_at timestamptz not null default now(),
+  created_by uuid references academy_students (id) on delete set null,
+  -- Taking one down hides it from students without destroying the record.
+  hidden     boolean not null default false
+);
+
+create index if not exists academy_announcements_live_idx
+  on academy_announcements (created_at desc)
+  where hidden = false;
+
+alter table academy_modules       enable row level security;
+alter table academy_announcements enable row level security;
+-- RLS on, no policies, server-only through the service role, as with the rest.
+
 -- --------------------------------------------------------------- lockdown ---
 alter table academy_students    enable row level security;
 alter table academy_login_codes enable row level security;

@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
-import { academyConfigured, getProgress } from "@/lib/academy/store";
+import {
+  academyConfigured,
+  getAnnouncements,
+  getModuleExtras,
+  getProgress,
+} from "@/lib/academy/store";
 import { courseHtml } from "@/lib/academy/content";
 import { modules, quizModules } from "@/content/academy/modules";
 import CourseRuntime from "@/components/academy/CourseRuntime";
+import ModuleExtras from "@/components/academy/ModuleExtras";
 import SignOutButton from "@/components/academy/SignOutButton";
 import SignInForm from "@/components/academy/SignInForm";
 
@@ -134,7 +140,11 @@ export default async function AcademyPage() {
   }
 
   /* ----------------------------------------------------------- signed in -- */
-  const rows = await getProgress(student.id);
+  const [rows, extras, notices] = await Promise.all([
+    getProgress(student.id),
+    getModuleExtras(),
+    getAnnouncements({ limit: 3 }),
+  ]);
   const progress = Object.fromEntries(
     rows.map((r) => [r.module_idx, { best: r.best_score, passed: r.passed }])
   );
@@ -164,6 +174,12 @@ export default async function AcademyPage() {
                   Instructor view
                 </Link>
                 <Link
+                  href="/academy/teaching"
+                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+                >
+                  Teaching
+                </Link>
+                <Link
                   href="/academy/roster"
                   className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
                 >
@@ -171,6 +187,12 @@ export default async function AcademyPage() {
                 </Link>
               </>
             )}
+            <Link
+              href="/academy/materials"
+              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+            >
+              Materials
+            </Link>
             <SignOutButton />
           </div>
         </div>
@@ -181,7 +203,24 @@ export default async function AcademyPage() {
           component, so it ships once rather than twice — see the note at the
           top of CourseRuntime.tsx.
         */}
+        {notices.length > 0 && (
+          <div className="notices">
+            {notices.map((n) => (
+              <div key={n.id} className="notice">
+                <p>{n.body}</p>
+                <time dateTime={n.created_at}>
+                  {new Date(n.created_at).toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </time>
+              </div>
+            ))}
+          </div>
+        )}
+
         <CourseRuntime initialProgress={progress} />
+        <ModuleExtras extras={extras} />
 
         <div className="cols">
           <nav className="sidenav" aria-label="Modules">
