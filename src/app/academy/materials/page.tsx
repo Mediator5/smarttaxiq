@@ -1,7 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import AcademyNav from "@/components/academy/AcademyNav";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
-import { academyConfigured } from "@/lib/academy/store";
+import {
+  academyConfigured,
+  getPendingAccessRequests,
+} from "@/lib/academy/store";
 import {
   materialGroups,
   materials,
@@ -60,6 +63,10 @@ export default async function MaterialsPage() {
   if (!viewer) notFound();
 
   const isInstructor = viewer.role === "instructor";
+
+  // Only an instructor can act on a request, so only an instructor pays for
+  // the query — but the badge then matches every other page.
+  const pending = isInstructor ? (await getPendingAccessRequests()).length : 0;
   const visible = materials.filter(
     (m) => isInstructor || m.audience === "student"
   );
@@ -74,12 +81,7 @@ export default async function MaterialsPage() {
               Everything printable
             </h1>
           </div>
-          <Link
-            href="/academy"
-            className="text-[14.5px] text-ink/55 underline underline-offset-4 hover:text-ink"
-          >
-            The course
-          </Link>
+          <AcademyNav role={viewer.role} pendingRequests={pending} />
         </div>
 
         <p className="lede max-w-[62ch]">

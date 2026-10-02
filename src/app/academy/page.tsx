@@ -1,16 +1,16 @@
-import Link from "next/link";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
 import {
   academyConfigured,
   getAnnouncements,
   getModuleExtras,
+  getPendingAccessRequests,
   getProgress,
 } from "@/lib/academy/store";
 import { courseHtml } from "@/lib/academy/content";
 import { modules, quizModules } from "@/content/academy/modules";
 import CourseRuntime from "@/components/academy/CourseRuntime";
 import ModuleExtras from "@/components/academy/ModuleExtras";
-import SignOutButton from "@/components/academy/SignOutButton";
+import AcademyNav from "@/components/academy/AcademyNav";
 import SignInForm from "@/components/academy/SignInForm";
 
 /**
@@ -140,11 +140,16 @@ export default async function AcademyPage() {
   }
 
   /* ----------------------------------------------------------- signed in -- */
-  const [rows, extras, notices] = await Promise.all([
+  const [rows, extras, notices, requests] = await Promise.all([
     getProgress(student.id),
     getModuleExtras(),
     getAnnouncements({ limit: 3 }),
+    // Only an instructor can act on these, so only an instructor pays for the query.
+    student.role === "instructor"
+      ? getPendingAccessRequests()
+      : Promise.resolve([]),
   ]);
+  const pending = requests.length;
   const progress = Object.fromEntries(
     rows.map((r) => [r.module_idx, { best: r.best_score, passed: r.passed }])
   );
@@ -164,37 +169,7 @@ export default async function AcademyPage() {
                 : `Welcome back, ${student.first_name}`}
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            {student.role === "instructor" && (
-              <>
-                <Link
-                  href="/academy/instructor"
-                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-                >
-                  Instructor view
-                </Link>
-                <Link
-                  href="/academy/teaching"
-                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-                >
-                  Teaching
-                </Link>
-                <Link
-                  href="/academy/roster"
-                  className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-                >
-                  Roster
-                </Link>
-              </>
-            )}
-            <Link
-              href="/academy/materials"
-              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-            >
-              Materials
-            </Link>
-            <SignOutButton />
-          </div>
+          <AcademyNav role={student.role} pendingRequests={pending} />
         </div>
 
         {/*

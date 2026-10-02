@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AcademyNav from "@/components/academy/AcademyNav";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
 import {
   academyConfigured,
@@ -64,25 +65,7 @@ export default async function InstructorPage() {
               stays red for a week is the signal — not a red score on the day.
             </p>
           </div>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/academy/roster"
-              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-            >
-              Manage roster
-              {requests.length > 0 && (
-                <span className="ml-2 rounded-full bg-gold-100 px-2.5 py-1 text-[12px] font-bold text-gold-700 no-underline">
-                  {requests.length}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/academy"
-              className="text-[14.5px] text-ink/55 underline underline-offset-4 hover:text-ink"
-            >
-              The course
-            </Link>
-          </div>
+          <AcademyNav role="instructor" pendingRequests={requests.length} />
         </div>
 
         {cohort.length === 0 ? (

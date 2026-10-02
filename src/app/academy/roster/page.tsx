@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import AcademyNav from "@/components/academy/AcademyNav";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
 import {
   academyConfigured,
@@ -42,20 +42,7 @@ export default async function RosterPage() {
               Who&rsquo;s on the course
             </h1>
           </div>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/academy/instructor"
-              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-            >
-              Cohort progress
-            </Link>
-            <Link
-              href="/academy"
-              className="text-[14.5px] text-ink/55 underline underline-offset-4 hover:text-ink"
-            >
-              The course
-            </Link>
-          </div>
+          <AcademyNav role="instructor" pendingRequests={requests.length} />
         </div>
 
         <RosterManager

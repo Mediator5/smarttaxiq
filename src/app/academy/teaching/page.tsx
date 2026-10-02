@@ -1,10 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import AcademyNav from "@/components/academy/AcademyNav";
 import { currentStudent, sessionSecretConfigured } from "@/lib/academy/auth";
 import {
   academyConfigured,
   getAnnouncements,
   getModuleExtras,
+  getPendingAccessRequests,
 } from "@/lib/academy/store";
 import { modules } from "@/content/academy/modules";
 import TeachingManager from "@/components/academy/TeachingManager";
@@ -24,9 +25,12 @@ export default async function TeachingPage() {
   const viewer = await currentStudent();
   if (!viewer || viewer.role !== "instructor") notFound();
 
-  const [extras, announcements] = await Promise.all([
+  const [extras, announcements, requests] = await Promise.all([
     getModuleExtras(),
     getAnnouncements({ includeHidden: true }),
+    // Only for the nav badge, so a waiting request is visible from every page
+    // rather than only the two that happened to query for it.
+    getPendingAccessRequests(),
   ]);
 
   return (
@@ -39,26 +43,7 @@ export default async function TeachingPage() {
               Videos and notices
             </h1>
           </div>
-          <div className="flex flex-wrap items-center gap-5">
-            <Link
-              href="/academy/instructor"
-              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-            >
-              Cohort progress
-            </Link>
-            <Link
-              href="/academy/roster"
-              className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
-            >
-              Roster
-            </Link>
-            <Link
-              href="/academy"
-              className="text-[14.5px] text-ink/55 underline underline-offset-4 hover:text-ink"
-            >
-              The course
-            </Link>
-          </div>
+          <AcademyNav role="instructor" pendingRequests={requests.length} />
         </div>
 
         <TeachingManager
