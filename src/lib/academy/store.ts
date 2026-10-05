@@ -662,3 +662,151 @@ export async function getCohort(cohort: string): Promise<CohortRow[]> {
 
   return list.map((s) => ({ ...s, progress: byStudent.get(s.id) ?? [] }));
 }
+
+/* --------------------------------------------- preparer onboarding ------- */
+
+/**
+ * Paperwork tracking for preparers joining the practice.
+ *
+ * What is NOT here is the point of it. No SSN, no date of birth, no licence
+ * number, no uploaded file, no storage bucket. The table records that a
+ * document was received or sighted and on what day; the documents themselves
+ * live with a filer that already carries the compliance burden for holding
+ * them. The reasoning is written out at length above the table definition in
+ * supabase/academy.sql, and it should be read before anyone adds a column.
+ *
+ * The practical consequence: this feature stores nothing that a breach would
+ * make into a reportable event, so it needs no multi-factor authentication to
+ * be lawful — which the Academy's emailed one-time code could not provide.
+ */
+
+export type OnboardingRow = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string | null;
+  student_id: string | null;
+  ptin: string | null;
+  ptin_verified_at: string | null;
+  w9_received_at: string | null;
+  id_sighted_at: string | null;
+  security_plan_signed_at: string | null;
+  notes: string | null;
+  confirmed_by: string | null;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// One string literal rather than a concatenation: supabase-js reads the
+// select list at the type level, and a concatenated string is just `string` to
+// it, which loses the row typing and makes every cast below an error.
+// prettier-ignore
+const ONBOARDING_COLS = "id, email, first_name, last_name, student_id, ptin, ptin_verified_at, w9_received_at, id_sighted_at, security_plan_signed_at, notes, confirmed_by, archived, created_at, updated_at" as const;
+
+/** Everyone being onboarded, archived rows included — the page decides which
+ *  to show, the same way getRoster() hands over withdrawn students. */
+export async function getOnboarding(): Promise<OnboardingRow[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_onboarding")
+    .select(ONBOARDING_COLS)
+    .order("archived")
+    .order("first_name");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as OnboardingRow[];
+}
+
+/**
+ * Start tracking somebody, or revive the row that is already there.
+ *
+ * Links to the roster when the same address is enrolled, which is how a
+ * trainee who finishes the course and joins the practice carries one identity
+ * rather than two. The link is looked up here rather than passed in, so it
+ * cannot be forged by the caller and cannot go stale against a typo.
+ */
+export async function upsertOnboarding(input: {
+  email: string;
+  firstName: string;
+  lastName?: string | null;
+}): Promise<OnboardingRow> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const email = normalizeEmail(input.email);
+  const student = await findStudentByEmail(email);
+
+  const { data, error } = await supabase
+    .from("academy_onboarding")
+    .upsert(
+      {
+        email,
+        first_name: input.firstName.trim().slice(0, 80),
+        last_name: input.lastName?.trim().slice(0, 80) || null,
+        student_id: student?.id ?? null,
+        archived: false,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email" }
+    )
+    .select(ONBOARDING_COLS)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as OnboardingRow;
+}
+
+/**
+ * Save the PTIN, the four checks and the note.
+ *
+ * Only the keys present in `patch` are written, so ticking one box does not
+ * quietly blank a field somebody else filled in. `null` is a real value here
+ * — it is how a box gets un-ticked after being ticked by mistake — which is
+ * why this takes an explicit patch rather than a whole row.
+ */
+export async function saveOnboarding(
+  id: string,
+  patch: {
+    ptin?: string | null;
+    ptin_verified_at?: string | null;
+    w9_received_at?: string | null;
+    id_sighted_at?: string | null;
+    security_plan_signed_at?: string | null;
+    notes?: string | null;
+  },
+  confirmedBy: string
+): Promise<OnboardingRow> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { data, error } = await supabase
+    .from("academy_onboarding")
+    .update({
+      ...patch,
+      confirmed_by: confirmedBy,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(ONBOARDING_COLS)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as OnboardingRow;
+}
+
+/** Archive or restore. Never deletes: a compliance record that somebody
+ *  ticked and then hid is still a record of what was ticked. */
+export async function setOnboardingArchived(id: string, archived: boolean) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { error } = await supabase
+    .from("academy_onboarding")
+    .update({ archived, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}

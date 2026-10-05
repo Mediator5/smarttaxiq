@@ -5,11 +5,14 @@
 -- the site uses (the one holding `subscribers` and `contact_submissions`).
 -- It is safe to run more than once.
 --
--- Three tables and nothing clever:
+-- The core is three tables and nothing clever:
 --
 --   academy_students      who is enrolled, and who is allowed to teach
 --   academy_login_codes   short-lived one-time sign-in codes
 --   academy_progress      one row per student per module
+--
+-- Plus, added later: academy_access_requests, academy_modules,
+-- academy_announcements and academy_onboarding.
 --
 -- Row Level Security is ON with no policies, which is how every other table
 -- in this project is set up. That means the anon and publishable keys can read
@@ -161,6 +164,72 @@ create index if not exists academy_announcements_live_idx
 alter table academy_modules       enable row level security;
 alter table academy_announcements enable row level security;
 -- RLS on, no policies, server-only through the service role, as with the rest.
+
+-- -------------------------------------------------------- preparer onboarding
+-- Paperwork tracking for preparers joining the practice.
+--
+-- READ THIS BEFORE ADDING A COLUMN. This table records *that* a document was
+-- received or sighted, never the document. There is no ssn column, no date of
+-- birth, no licence number, no file reference, and no Supabase Storage bucket
+-- anywhere in this schema. That is a deliberate design decision, not an
+-- oversight, and it is the single reason this feature could ship in a day:
+--
+--   * Michigan's Social Security Number Privacy Act requires a written
+--     privacy policy, secure transmission and multi-factor authentication for
+--     any online system through which an SSN can be reached. Academy sign-in
+--     is a one-time emailed code — good authentication, but one factor, not
+--     two. Storing an SSN behind it would not meet the statute, and the
+--     statute carries damages of up to $1,000 per violation plus fees, with a
+--     private right of action.
+--   * The FTC Safeguards Rule brings encryption at rest and in transit,
+--     access controls, a named Qualified Individual, vendor oversight, secure
+--     disposal and 30-day breach notification. A PTIN holder operating
+--     without a compliant written information security plan is risking the
+--     credential itself.
+--
+-- So the sensitive items live where that burden is already carried:
+--
+--   W-9        a purpose-built filer (Track1099, TaxBandits) or the client
+--              portal in her tax software. The SSN/EIN goes there, not here.
+--   Photo ID   sighted on a video call and ticked off below. Form I-9 applies
+--              to employees, not 1099 contractors, so there is no obligation
+--              to retain a copy — and a stored licence image is the highest
+--              risk item on the list with the weakest justification for it.
+--   PTIN       just a number. Typed in below and checked against the public
+--              IRS directory. Nothing to upload.
+create table if not exists academy_onboarding (
+  id         uuid primary key default gen_random_uuid(),
+  -- Email is the identity, normalised, so one preparer cannot appear twice.
+  email      text not null unique,
+  first_name text not null,
+  last_name  text,
+  -- Set when the same address is on the Academy roster. Nullable on purpose:
+  -- a preparer hired without taking the course still needs the paperwork.
+  student_id uuid references academy_students (id) on delete set null,
+  -- The PTIN itself. Format is P followed by eight digits.
+  ptin text,
+  -- The four checks. A date means done, and on what day; null means not yet.
+  ptin_verified_at        date,
+  w9_received_at          date,
+  id_sighted_at           date,
+  security_plan_signed_at date,
+  notes text,
+  -- Who ticked the last box. Accountability for a compliance record matters
+  -- more than it does for a quiz score.
+  confirmed_by uuid references academy_students (id) on delete set null,
+  -- Taking a row out of the active list without destroying the record.
+  archived   boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists academy_onboarding_live_idx
+  on academy_onboarding (first_name)
+  where archived = false;
+
+alter table academy_onboarding enable row level security;
+-- RLS on, no policies. Only the service-role key, only through the
+-- instructor-gated route, as with everything else here.
 
 -- --------------------------------------------------------------- lockdown ---
 alter table academy_students    enable row level security;

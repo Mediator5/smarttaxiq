@@ -28,6 +28,7 @@ const ITEMS: Item[] = [
   { href: "/academy/instructor", label: "Progress", instructorOnly: true },
   { href: "/academy/teaching", label: "Teaching", instructorOnly: true },
   { href: "/academy/roster", label: "Roster", instructorOnly: true },
+  { href: "/academy/onboarding", label: "Onboarding", instructorOnly: true },
   { href: "/academy/materials", label: "Materials" },
 ];
 

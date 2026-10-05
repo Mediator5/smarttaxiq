@@ -20,7 +20,7 @@ export type Material = {
   pages: number;
   audience: "student" | "instructor";
   /** Grouping on the materials page. */
-  group: "Teach from" | "Give to students" | "Mark with";
+  group: "Teach from" | "Give to students" | "Mark with" | "Run the practice";
 };
 
 export const materials: Material[] = [
@@ -84,6 +84,26 @@ export const materials: Material[] = [
     audience: "instructor",
     group: "Mark with",
   },
+  {
+    slug: "running-the-academy",
+    file: "running-the-academy.pdf",
+    title: "Running the Academy",
+    blurb:
+      "How the site works, week by week: adding people, posting a video or a notice, reading the progress table, and what to do when something looks wrong.",
+    pages: 10,
+    audience: "instructor",
+    group: "Run the practice",
+  },
+  {
+    slug: "onboarding-a-preparer",
+    file: "onboarding-a-preparer.pdf",
+    title: "Onboarding a preparer",
+    blurb:
+      "What to collect before somebody files under your PTIN, where the W-9 goes, why no ID copy is kept, and the run list for clearing one person start to finish.",
+    pages: 6,
+    audience: "instructor",
+    group: "Run the practice",
+  },
 ];
 
 export function materialBySlug(slug: string) {
@@ -94,4 +114,5 @@ export const materialGroups = [
   "Teach from",
   "Give to students",
   "Mark with",
+  "Run the practice",
 ] as const;

@@ -47,13 +47,20 @@ Supabase → the **same project** the site already uses (the one holding
 `subscribers` and `contact_submissions`) → SQL Editor → paste
 `supabase/academy.sql` → Run.
 
-It is safe to run more than once. It creates three tables:
+It is safe to run more than once, and **it has grown since the first
+deploy — re-run it after every pull.** New tables are added with
+`create table if not exists`, so re-running never touches the data already
+there; skipping it is what breaks a new page.
 
 | Table | What it holds |
 |---|---|
 | `academy_students` | the roster, and who is allowed to teach |
 | `academy_login_codes` | short-lived one-time sign-in codes |
 | `academy_progress` | one row per student per module |
+| `academy_access_requests` | people who asked to be added |
+| `academy_modules` | the instructor's video and note per module |
+| `academy_announcements` | notices to the cohort |
+| `academy_onboarding` | preparer paperwork checklist — no SSN, no documents |
 
 **Change Lashanda's email before you run it.** The seed at the bottom inserts
 her as the instructor, and that one row is the only thing that unlocks the
@@ -181,7 +188,7 @@ here, because it is repository source reviewed like any other file and nothing a
 student types ever reaches it.
 
 If you rename `section.m#mN`, `div.quiz[data-quiz]`, `div.qq[data-a]` or
-`button.reveal` in that file, update `src/components/academy/CourseBody.tsx` and
+`button.reveal` in that file, update `src/components/academy/CourseRuntime.tsx` and
 `src/content/academy/modules.ts` to match.
 
 **Knowledge-check scores are self-reported, and that is fine.** The answer key
@@ -198,6 +205,39 @@ light only. Nothing in it can reach the header, the footer or any other page.
 
 **`/academy` is `noindex`, disallowed in robots.txt, and absent from the
 sitemap.** It is a private training area for five named people, not content.
+
+---
+
+## Preparer onboarding — what it does not store
+
+`/academy/onboarding` tracks whether each preparer is cleared to work under the
+practice's PTIN. It holds a PTIN number, four dates, and a note. It holds **no
+Social Security number, no date of birth, no licence number, and no uploaded
+file**, and there is no Supabase Storage bucket anywhere in this project.
+
+That is the design, not a stage one. Two rules apply to a system that can reach
+an SSN online:
+
+- **Michigan's Social Security Number Privacy Act** requires a written privacy
+  policy, secure transmission, and **multi-factor authentication** on any
+  system through which an SSN can be reached. Academy sign-in is a one-time
+  emailed code — good authentication, but one factor. Statutory damages run to
+  $1,000 per violation plus fees, with a private right of action.
+- **The FTC Safeguards Rule** adds encryption at rest and in transit, access
+  controls, a named Qualified Individual, vendor oversight, secure disposal and
+  30-day breach notification. A PTIN holder without a compliant written
+  information security plan is risking the credential.
+
+So the sensitive items are routed to services already carrying that burden:
+
+| Item | Where it goes | Why not here |
+|---|---|---|
+| W-9 (SSN or EIN) | Track1099, TaxBandits, or the client portal in the tax software | They are built and insured to hold it; this site would need MFA to hold it lawfully |
+| Photo ID | Sighted on a call, ticked off, no copy kept | Form I-9 applies to employees, not 1099 contractors — there is no duty to retain one, and a stored licence image is the highest-risk item on the list |
+| PTIN | Typed in, checked against the IRS directory | It is a public credential number, not a secret |
+
+**If anyone ever asks for an upload button on that page, the answer is a new
+conversation about MFA and a WISP, not a new column.**
 
 ---
 
