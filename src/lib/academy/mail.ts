@@ -31,12 +31,20 @@ export async function sendLoginCode(input: {
   if (!mailerConfigured()) {
     // In development this is the normal case: there is no Resend key locally
     // and no reason to need one. Log the code so sign-in can still be tested
-    // end to end. It never reaches a production log, because production has a
-    // key and takes the branch below.
-    console.warn(
-      `[academy] no mailer configured — sign-in code for ${input.to} is ${input.code}`
+    // end to end.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[academy] no mailer configured — sign-in code for ${input.to} is ${input.code}`
+      );
+      return;
+    }
+    // In production it is a fault, and it must NOT be swallowed. Returning
+    // quietly here tells the student "a code is on its way" and sends nothing,
+    // which from their side is indistinguishable from not being on the roster
+    // — the single most confusing failure this system can produce.
+    throw new Error(
+      "RESEND_API_KEY is missing in production — no sign-in code was sent"
     );
-    return;
   }
 
   const name = esc(input.firstName);
@@ -262,4 +270,111 @@ This is also on the course page: ${url}`;
   }
 
   return { sent, failed };
+}
+
+
+/**
+ * Send a preparer their one-off onboarding link.
+ *
+ * The link is the credential, so this email is the delivery mechanism for a
+ * secret and is treated like the sign-in code above: a missing mailer in
+ * production throws rather than reporting a send that never happened.
+ *
+ * The tone matters more here than in the other three. This usually arrives
+ * before the person has any relationship with the practice beyond a
+ * conversation, and an email asking for a professional credential out of
+ * nowhere looks exactly like a phishing attempt unless it says who it is from
+ * and what it will and will not ask for.
+ */
+export async function sendIntakeLink(input: {
+  to: string;
+  firstName: string;
+  url: string;
+  days: number;
+  fromName: string;
+}) {
+  if (!mailerConfigured()) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[academy] no mailer configured — intake link for ${input.to} is ${input.url}`
+      );
+      return;
+    }
+    throw new Error(
+      "RESEND_API_KEY is missing in production — no intake link was sent"
+    );
+  }
+
+  const name = esc(input.firstName);
+  const from = esc(input.fromName);
+  const url = input.url;
+
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#eef1f6">
+  <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+    <div style="padding:20px 26px;background:${INK}">
+      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;color:#fff">
+        Smart<span style="color:${GOLD}">TaxIQ</span>
+        <span style="font-size:13px;font-weight:400;color:rgba(255,255,255,.6)"> &nbsp;Preparer onboarding</span>
+      </p>
+    </div>
+    <div style="padding:26px">
+      <p style="margin:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        ${name}, there are two things we need from you before the season
+        starts. ${from} has set up a page for them.
+      </p>
+      <p style="margin:0 0 22px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        It takes about two minutes: your <strong>PTIN</strong>, and your
+        signature on our security plan once you have read it.
+      </p>
+      <p style="margin:0 0 22px;text-align:center">
+        <a href="${url}" style="display:inline-block;padding:14px 28px;background:${GOLD};border-radius:10px;
+           font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:${INK};text-decoration:none">
+          Open your onboarding page
+        </a>
+      </p>
+      <p style="margin:0 0 18px;padding:14px;background:#f2f5fa;border-radius:10px;
+                font-family:Helvetica,Arial,sans-serif;font-size:14.5px;line-height:1.7;color:${INK}">
+        <strong>This page will never ask for your Social Security number,
+        your bank details or a password.</strong> If a page claiming to be
+        ours asks for any of those, close it and call us on ${esc(site.phone)}.
+      </p>
+      <p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${MUTED}">
+        Your W-9 is handled separately — a request for it will arrive from our
+        filing service in its own email. That is the only place your Social
+        Security number should ever be typed.
+      </p>
+      <p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${MUTED}">
+        The link works once and expires in ${input.days} days. If it has run
+        out, reply to this email and we will send a new one.
+      </p>
+      <p style="margin:26px 0 0;padding-top:18px;border-top:1px solid #e6eaf1;font-family:Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.65;color:${MUTED}">
+        ${esc(site.divisionStatement)}<br>
+        ${esc(addressLine)} &middot; ${esc(site.phone)}
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `${input.firstName}, there are two things we need from you before the season starts. ${input.fromName} has set up a page for them.
+
+It takes about two minutes: your PTIN, and your signature on our security plan once you have read it.
+
+${url}
+
+This page will never ask for your Social Security number, your bank details or a password. If a page claiming to be ours asks for any of those, close it and call us on ${site.phone}.
+
+Your W-9 is handled separately — a request for it will arrive from our filing service in its own email. That is the only place your Social Security number should ever be typed.
+
+The link works once and expires in ${input.days} days. If it has run out, reply to this email and we will send a new one.
+
+---
+${site.divisionStatement}
+${addressLine} · ${site.phone}`;
+
+  await deliver({
+    to: input.to,
+    subject: `${input.fromName} — two things before the season starts`,
+    html,
+    text,
+  });
 }

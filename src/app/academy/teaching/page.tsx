@@ -9,6 +9,7 @@ import {
 } from "@/lib/academy/store";
 import { modules } from "@/content/academy/modules";
 import TeachingManager from "@/components/academy/TeachingManager";
+import StaffSignIn from "@/components/academy/StaffSignIn";
 
 /**
  * Videos, module notes and announcements — the parts of the course the
@@ -23,7 +24,10 @@ export default async function TeachingPage() {
   if (!academyConfigured() || !sessionSecretConfigured()) notFound();
 
   const viewer = await currentStudent();
-  if (!viewer || viewer.role !== "instructor") notFound();
+  // Signed out is a different situation from signed in as a trainee, and the
+  // two get different answers — see the note in StaffSignIn.
+  if (!viewer) return <StaffSignIn area="videos and notices" />;
+  if (viewer.role !== "instructor") notFound();
 
   const [extras, announcements, requests] = await Promise.all([
     getModuleExtras(),

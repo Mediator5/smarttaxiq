@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { currentStudent } from "@/lib/academy/auth";
 import {
   academyConfigured,
+  createIntakeToken,
   getOnboarding,
   saveOnboarding,
   setOnboardingArchived,
+  setSetting,
   upsertOnboarding,
+  INTAKE_DAYS,
 } from "@/lib/academy/store";
+import { sendIntakeLink } from "@/lib/academy/mail";
+import { siteUrl } from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -169,6 +174,60 @@ export async function POST(request: Request) {
 
       const row = await saveOnboarding(id, patch, viewer.id);
       return NextResponse.json({ ok: true, row });
+    }
+
+    /* --------------------------------------------------- intake link -- */
+    if (action === "send-intake") {
+      const id = typeof body?.id === "string" ? body.id : "";
+      const rows = await getOnboarding();
+      const row = rows.find((r) => r.id === id);
+      if (!row) {
+        return NextResponse.json(
+          { ok: false, error: "Which person?" },
+          { status: 400 }
+        );
+      }
+
+      // Mint first, send second. If the send fails we still hand the URL back
+      // so she can pass it on herself — a link that exists and did not get
+      // emailed is a far better outcome than no link and an error.
+      const token = await createIntakeToken(row.id);
+      const url = `${siteUrl()}/intake/${token}`;
+
+      let emailed = true;
+      try {
+        await sendIntakeLink({
+          to: row.email,
+          firstName: row.first_name,
+          url,
+          days: INTAKE_DAYS,
+          fromName: `${viewer.first_name} ${viewer.last_name ?? ""}`.trim(),
+        });
+      } catch (err) {
+        console.error("[academy] intake link email failed:", err);
+        emailed = false;
+      }
+
+      // The URL is returned exactly once, here. Only the hash is stored, so
+      // there is no way to show it again later — losing it means sending a
+      // fresh link, which also retires the old one.
+      return NextResponse.json({ ok: true, url, emailed, days: INTAKE_DAYS });
+    }
+
+    /* ------------------------------------------------------- settings -- */
+    if (action === "set-plan-url") {
+      const raw = typeof body?.url === "string" ? body.url.trim() : "";
+      if (raw && !/^https:\/\/\S+$/i.test(raw)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "That needs to be a full https:// link to the plan.",
+          },
+          { status: 400 }
+        );
+      }
+      await setSetting("security_plan_url", raw || null, viewer.id);
+      return NextResponse.json({ ok: true });
     }
 
     /* -------------------------------------------------------- archive -- */

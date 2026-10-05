@@ -7,6 +7,7 @@ import {
   getRoster,
 } from "@/lib/academy/store";
 import RosterManager from "@/components/academy/RosterManager";
+import StaffSignIn from "@/components/academy/StaffSignIn";
 
 /**
  * Enrolment, without SQL.
@@ -25,7 +26,10 @@ export default async function RosterPage() {
   if (!academyConfigured() || !sessionSecretConfigured()) notFound();
 
   const viewer = await currentStudent();
-  if (!viewer || viewer.role !== "instructor") notFound();
+  // Signed out is a different situation from signed in as a trainee, and the
+  // two get different answers — see the note in StaffSignIn.
+  if (!viewer) return <StaffSignIn area="the roster" />;
+  if (viewer.role !== "instructor") notFound();
 
   const [roster, requests] = await Promise.all([
     getRoster(),

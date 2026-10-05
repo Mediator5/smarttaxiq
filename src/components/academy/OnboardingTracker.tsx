@@ -82,14 +82,31 @@ function pretty(date: string | null) {
   });
 }
 
+type Reply = {
+  ok?: boolean;
+  error?: string;
+  url?: string;
+  emailed?: boolean;
+  days?: number;
+};
+
+type Send = (
+  payload: Record<string, unknown>,
+  key: string
+) => Promise<Reply | null>;
+
 export default function OnboardingTracker({
   rows,
   rosterSuggestions,
+  planUrl,
 }: {
   rows: OnboardingRow[];
   /** People on the Academy roster who aren't being tracked yet, so adding a
    *  graduate is one click rather than retyping their address. */
   rosterSuggestions: { email: string; first_name: string; last_name: string | null }[];
+  /** Where the written information security plan lives, if it has been set.
+   *  Null is a real state with its own prompt, not an empty string. */
+  planUrl: string | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -101,7 +118,13 @@ export default function OnboardingTracker({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
-  async function send(payload: Record<string, unknown>, key: string) {
+  // Returns the response body on success and null on failure, because the
+  // intake action needs the one-time URL out of it. A bare boolean was enough
+  // until something had to come back.
+  async function send(
+    payload: Record<string, unknown>,
+    key: string
+  ): Promise<Reply | null> {
     setBusy(key);
     setError(null);
     setDone(null);
@@ -111,19 +134,16 @@ export default function OnboardingTracker({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
-      };
+      const data = (await res.json().catch(() => ({}))) as Reply;
       if (!res.ok || data.ok === false) {
         setError(data.error ?? "That didn't save.");
-        return false;
+        return null;
       }
       router.refresh();
-      return true;
+      return data;
     } catch {
       setError("Couldn't reach the server. Check your connection.");
-      return false;
+      return null;
     } finally {
       setBusy(null);
     }
@@ -192,6 +212,11 @@ export default function OnboardingTracker({
             .
           </li>
         </ul>
+        <p className="mt-4 max-w-[68ch] text-[15px] leading-relaxed text-ink/70">
+          Two of the four checks are the preparer&rsquo;s to make, not yours:
+          their PTIN and their signature. Send them an onboarding link from
+          their card and those arrive on their own.
+        </p>
         <p className="mt-4 max-w-[68ch] text-[14px] leading-relaxed text-ink/55">
           Michigan&rsquo;s Social Security Number Privacy Act requires
           multi-factor authentication on any system an SSN can be reached
@@ -223,6 +248,7 @@ export default function OnboardingTracker({
                 row={row}
                 busy={busy}
                 onSend={send}
+                planUrl={planUrl}
               />
             ))}
           </div>
@@ -325,6 +351,36 @@ export default function OnboardingTracker({
         </form>
       </section>
 
+      {/* ------------------------------------------------ security plan -- */}
+      <section>
+        <h2 className="text-[20px] font-bold">Your security plan</h2>
+        <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-ink/65">
+          Paste a link to your written information security plan. Preparers
+          read it from their onboarding page and sign the acknowledgement
+          there. A Google Drive or Dropbox share link set to{" "}
+          <em>anyone with the link can view</em> is fine &mdash; the plan is a
+          document about how you work, not a secret.
+        </p>
+        <PlanLink current={planUrl} busy={busy} onSend={send} />
+        {!planUrl && (
+          <p className="mt-4 max-w-[62ch] rounded-xl bg-[#faf2d6] px-5 py-4 text-[14.5px] leading-relaxed text-ink/80">
+            Do not have one yet? That is the first thing to fix, and not
+            because of this page &mdash; a tax practice is required to have
+            one. The IRS publishes a free template built for a practice your
+            size:{" "}
+            <a
+              href="https://www.irs.gov/pub/irs-pdf/p5708.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-ink underline underline-offset-2"
+            >
+              Publication 5708
+            </a>
+            . An afternoon with it is enough.
+          </p>
+        )}
+      </section>
+
       {/* --------------------------------------------------- archived ---- */}
       {archived.length > 0 && (
         <section>
@@ -391,17 +447,27 @@ function PersonCard({
   row,
   busy,
   onSend,
+  planUrl,
 }: {
   row: OnboardingRow;
   busy: string | null;
-  onSend: (payload: Record<string, unknown>, key: string) => Promise<boolean>;
+  onSend: Send;
+  planUrl: string | null;
 }) {
   const [ptin, setPtin] = useState(row.ptin ?? "");
   const [notes, setNotes] = useState(row.notes ?? "");
   const [open, setOpen] = useState(false);
+  // Shown once, right after minting. Only the hash is stored server-side, so
+  // this is the only moment the link can be copied — after a reload it is gone
+  // and the only way back is a fresh link.
+  const [link, setLink] = useState<string | null>(null);
+  const [linkWarning, setLinkWarning] = useState<string | null>(null);
 
   const ticked = CHECKS.filter((c) => row[c.field] !== null).length;
   const complete = ticked === CHECKS.length;
+  const intakeExpired = row.intake_expires_at
+    ? new Date(row.intake_expires_at).getTime() < Date.now()
+    : true;
 
   return (
     <div
@@ -542,6 +608,90 @@ function PersonCard({
         )}
       </div>
 
+      {/* ----------------------------------------------------- intake --- */}
+      <div className="mt-6 rounded-xl border border-ink/12 bg-ice/60 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[14.5px] font-bold text-ink">
+              Their onboarding link
+            </p>
+            <p className="mt-1 text-[13.5px] leading-relaxed text-ink/60">
+              {row.intake_completed_at ? (
+                <>
+                  Completed {pretty(row.intake_completed_at.slice(0, 10))}
+                  {row.plan_signed_name ? ` · signed ${row.plan_signed_name}` : ""}
+                </>
+              ) : row.intake_sent_at && !intakeExpired ? (
+                <>
+                  Sent {pretty(row.intake_sent_at.slice(0, 10))} · expires{" "}
+                  {pretty(row.intake_expires_at!.slice(0, 10))} · not opened yet
+                </>
+              ) : row.intake_sent_at ? (
+                <>Expired {pretty(row.intake_expires_at!.slice(0, 10))}</>
+              ) : (
+                <>
+                  Not sent. They give you their PTIN and sign the security plan
+                  on it — it asks for nothing else.
+                </>
+              )}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={async () => {
+              const reply = await onSend(
+                { action: "send-intake", id: row.id },
+                `intake-${row.id}`
+              );
+              if (reply?.url) {
+                setLink(reply.url);
+                setLinkWarning(
+                  reply.emailed === false
+                    ? "The email did not go out, but the link is live — send it to them yourself."
+                    : null
+                );
+              }
+            }}
+            className="btn-outline shrink-0 px-5 py-2.5 text-[14px]"
+          >
+            {busy === `intake-${row.id}`
+              ? "Sending…"
+              : row.intake_completed_at
+              ? "Send again"
+              : row.intake_sent_at
+              ? "Send a new link"
+              : "Send intake link"}
+          </button>
+        </div>
+
+        {!planUrl && !row.intake_completed_at && (
+          <p className="mt-3 rounded-lg bg-[#faf2d6] px-4 py-3 text-[13.5px] leading-relaxed text-ink/80">
+            No security plan link is set yet. Set one at the bottom of this page
+            first, or they will be asked to sign a plan nobody has given them.
+          </p>
+        )}
+
+        {link && (
+          <div className="mt-4 rounded-lg border border-gold-500/50 bg-white p-4">
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-ink/55">
+              Copy it now — this is the only time it is shown
+            </p>
+            <input
+              readOnly
+              value={link}
+              onFocus={(e) => e.currentTarget.select()}
+              className="mt-2 w-full rounded-lg border border-ink/15 bg-ice px-3 py-2 font-mono text-[12.5px] text-ink"
+            />
+            <p className="mt-2 text-[13px] leading-relaxed text-ink/55">
+              {linkWarning ??
+                "Also emailed to them. Works once, expires in three weeks, and sending a new link retires this one."}
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-ink/10 pt-4">
         <p className="text-[13px] text-ink/45">
           Last change{" "}
@@ -560,6 +710,68 @@ function PersonCard({
           {busy === row.id ? "…" : "Archive"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------- the plan link ---- */
+
+function PlanLink({
+  current,
+  busy,
+  onSend,
+}: {
+  current: string | null;
+  busy: string | null;
+  onSend: Send;
+}) {
+  const [url, setUrl] = useState(current ?? "");
+  const changed = url.trim() !== (current ?? "");
+
+  return (
+    <div className="mt-5 rounded-2xl border border-ink/10 bg-white p-6">
+      <label
+        htmlFor="plan-url"
+        className="block text-[11.5px] font-bold uppercase tracking-[0.16em] text-ink/55"
+      >
+        Link to the plan
+      </label>
+      <input
+        id="plan-url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://…"
+        inputMode="url"
+        spellCheck={false}
+        className="mt-2 w-full rounded-lg border border-ink/15 bg-white px-4 py-3 text-[15px] text-ink outline-none transition focus:border-gold-500"
+      />
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        {changed && (
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => onSend({ action: "set-plan-url", url }, "plan-url")}
+            className="btn-gold px-6 py-2.5 text-[14.5px]"
+          >
+            {busy === "plan-url" ? "Saving…" : "Save link"}
+          </button>
+        )}
+        {current && (
+          <a
+            href={current}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[14.5px] font-semibold text-ink underline underline-offset-4 hover:text-gold-700"
+          >
+            Open it and check the sharing works
+          </a>
+        )}
+      </div>
+      <p className="mt-4 max-w-[58ch] text-[13.5px] leading-relaxed text-ink/55">
+        Open it in a private window before you send anyone a link. A share
+        setting that works for you and nobody else is the usual reason a
+        preparer stalls here.
+      </p>
     </div>
   );
 }

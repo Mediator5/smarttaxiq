@@ -12,7 +12,7 @@
 --   academy_progress      one row per student per module
 --
 -- Plus, added later: academy_access_requests, academy_modules,
--- academy_announcements and academy_onboarding.
+-- academy_announcements, academy_onboarding and academy_settings.
 --
 -- Row Level Security is ON with no policies, which is how every other table
 -- in this project is set up. That means the anon and publishable keys can read
@@ -230,6 +230,53 @@ create index if not exists academy_onboarding_live_idx
 alter table academy_onboarding enable row level security;
 -- RLS on, no policies. Only the service-role key, only through the
 -- instructor-gated route, as with everything else here.
+
+-- ------------------------------------------------------------- intake links --
+-- The preparer's own side of onboarding.
+--
+-- Two of the four checks are things only the preparer can supply: their PTIN,
+-- and their signature on the security plan acknowledgement. Before this they
+-- arrived by email and were typed in by hand, which is slow and puts the
+-- instructor's inbox in the middle of it.
+--
+-- So each preparer gets a one-off link. No account, no password: the token IS
+-- the credential, the way a W-9 request from a filing service works. That is
+-- proportionate here precisely because the page behind it holds nothing
+-- sensitive — a PTIN, a typed name, a tick. If anything on that page ever
+-- became sensitive, a bearer link would stop being good enough and this would
+-- need real accounts.
+--
+-- Only the SHA-256 hash is stored, as with sign-in codes. A leaked database
+-- should not hand anyone a set of working intake links.
+alter table academy_onboarding
+  add column if not exists intake_token_hash  text,
+  add column if not exists intake_sent_at     timestamptz,
+  add column if not exists intake_expires_at  timestamptz,
+  add column if not exists intake_completed_at timestamptz,
+  -- Their typed name, which is what makes the acknowledgement a signature
+  -- rather than a checkbox, and the address it was signed from.
+  add column if not exists plan_signed_name   text,
+  add column if not exists plan_signed_ip     text;
+
+create index if not exists academy_onboarding_intake_idx
+  on academy_onboarding (intake_token_hash)
+  where intake_token_hash is not null;
+
+-- ---------------------------------------------------------------- settings ---
+-- A handful of practice-wide values that belong to the office rather than to
+-- the code: at the moment only the link to the written information security
+-- plan that preparers are asked to read and sign.
+--
+-- A table rather than an environment variable because Lashanda changes it, not
+-- the developer, and changing it should not need a redeploy.
+create table if not exists academy_settings (
+  key        text primary key,
+  value      text,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references academy_students (id) on delete set null
+);
+
+alter table academy_settings enable row level security;
 
 -- --------------------------------------------------------------- lockdown ---
 alter table academy_students    enable row level security;

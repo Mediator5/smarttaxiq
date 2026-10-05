@@ -61,6 +61,7 @@ there; skipping it is what breaks a new page.
 | `academy_modules` | the instructor's video and note per module |
 | `academy_announcements` | notices to the cohort |
 | `academy_onboarding` | preparer paperwork checklist — no SSN, no documents |
+| `academy_settings` | office-level values Lashanda edits, e.g. the security plan link |
 
 **Change Lashanda's email before you run it.** The seed at the bottom inserts
 her as the instructor, and that one row is the only thing that unlocks the
@@ -238,6 +239,41 @@ So the sensitive items are routed to services already carrying that burden:
 
 **If anyone ever asks for an upload button on that page, the answer is a new
 conversation about MFA and a WISP, not a new column.**
+
+### The preparer's own link
+
+Two of the four checks are things only the preparer can supply, so they get
+their own page. On the Onboarding tab, **Send intake link** on somebody's card
+mints a one-off URL — `/intake/<token>` — emails it to them, and shows it once
+so it can also be passed on by hand.
+
+| | |
+|---|---|
+| What they do there | Enter their PTIN, read the security plan, sign the acknowledgement by typing their full name |
+| What it cannot do | Accept a file, an SSN, a date of birth or a bank detail. There is no upload control on the page |
+| What it cannot tick | `ptin_verified_at`, `id_sighted_at`, `w9_received_at`. Those are Lashanda's statements about what *she* checked — a self-service form that could tick a verification box would make the checklist worthless |
+| Lifetime | 21 days, one submission. Sending a new link retires the old one |
+| Storage | Only the SHA-256 hash of the token, as with sign-in codes. The URL is shown exactly once and cannot be recovered |
+
+The token in the URL is the credential — no account, no password — the same
+shape a W-9 request from a filing service uses. **That is only proportionate
+because nothing behind it is sensitive.** If that page ever needed to hold
+something that was, a bearer link would stop being good enough.
+
+Set the **security plan link** at the bottom of the Onboarding tab before
+sending anyone a link, or they are asked to sign a plan nobody gave them. Any
+share URL works; check it opens in a private window.
+
+### Signed out is not the same as not allowed
+
+The four staff pages (Progress, Teaching, Roster, Onboarding) split the test
+two ways:
+
+- **Signed out** → the sign-in form. `/academy` already shows one publicly, so
+  this reveals nothing new, and it stops an instructor opening the roster link
+  on a phone and hitting what looks like a broken site.
+- **Signed in, not an instructor** → 404. By then we know who you are, and a
+  trainee should not be able to confirm a staff page exists.
 
 ---
 

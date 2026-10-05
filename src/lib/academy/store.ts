@@ -696,13 +696,21 @@ export type OnboardingRow = {
   archived: boolean;
   created_at: string;
   updated_at: string;
+  /* The preparer's own intake link. The token HASH is deliberately not on
+     this type and not in the select below: this row is handed to a client
+     component, and a value the browser never needs is a value the browser
+     should never receive. */
+  intake_sent_at: string | null;
+  intake_expires_at: string | null;
+  intake_completed_at: string | null;
+  plan_signed_name: string | null;
 };
 
 // One string literal rather than a concatenation: supabase-js reads the
 // select list at the type level, and a concatenated string is just `string` to
 // it, which loses the row typing and makes every cast below an error.
 // prettier-ignore
-const ONBOARDING_COLS = "id, email, first_name, last_name, student_id, ptin, ptin_verified_at, w9_received_at, id_sighted_at, security_plan_signed_at, notes, confirmed_by, archived, created_at, updated_at" as const;
+const ONBOARDING_COLS = "id, email, first_name, last_name, student_id, ptin, ptin_verified_at, w9_received_at, id_sighted_at, security_plan_signed_at, notes, confirmed_by, archived, created_at, updated_at, intake_sent_at, intake_expires_at, intake_completed_at, plan_signed_name" as const;
 
 /** Everyone being onboarded, archived rows included — the page decides which
  *  to show, the same way getRoster() hands over withdrawn students. */
@@ -807,6 +815,177 @@ export async function setOnboardingArchived(id: string, archived: boolean) {
     .from("academy_onboarding")
     .update({ archived, updated_at: new Date().toISOString() })
     .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/* ------------------------------------------------- the preparer's intake -- */
+
+/**
+ * How long an intake link stays good. Three weeks: long enough that somebody
+ * who is mid-season and not reading email still gets to it, short enough that
+ * a link forwarded or left in an old inbox stops working well before anyone
+ * would think to try it.
+ */
+export const INTAKE_DAYS = 21;
+
+function hashToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/**
+ * Mint a fresh intake link for a preparer and return the raw token ONCE.
+ *
+ * Only the hash is stored, so this value cannot be recovered afterwards — if
+ * it is lost, a new one is generated and the old one stops working, which is
+ * the behaviour you want anyway. 32 random bytes is 256 bits; it is not going
+ * to be guessed.
+ *
+ * Minting also clears any previous completion, because re-sending the link is
+ * what you do when something needs correcting.
+ */
+export async function createIntakeToken(id: string): Promise<string> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const token = crypto.randomBytes(32).toString("base64url");
+  const now = new Date();
+  const expires = new Date(now.getTime() + INTAKE_DAYS * 24 * 60 * 60 * 1000);
+
+  const { error } = await supabase
+    .from("academy_onboarding")
+    .update({
+      intake_token_hash: hashToken(token),
+      intake_sent_at: now.toISOString(),
+      intake_expires_at: expires.toISOString(),
+      intake_completed_at: null,
+      updated_at: now.toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  return token;
+}
+
+export type IntakeView = {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  email: string;
+  ptin: string | null;
+  security_plan_signed_at: string | null;
+  plan_signed_name: string | null;
+  intake_completed_at: string | null;
+  expired: boolean;
+};
+
+/**
+ * Resolve an intake token to the preparer it belongs to.
+ *
+ * Returns null for a token that does not exist, and a row flagged `expired`
+ * for one that has run out — those are different situations and the page says
+ * different things about them. An archived preparer resolves to null: taking
+ * somebody off the list should also stop their link working.
+ */
+export async function findByIntakeToken(
+  token: string
+): Promise<IntakeView | null> {
+  const supabase = db();
+  if (!supabase) return null;
+  if (!token || token.length < 20) return null;
+
+  const { data, error } = await supabase
+    .from("academy_onboarding")
+    .select(
+      "id, first_name, last_name, email, ptin, security_plan_signed_at, plan_signed_name, intake_completed_at, intake_expires_at, archived"
+    )
+    .eq("intake_token_hash", hashToken(token))
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data || data.archived) return null;
+
+  return {
+    id: data.id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    ptin: data.ptin,
+    security_plan_signed_at: data.security_plan_signed_at,
+    plan_signed_name: data.plan_signed_name,
+    intake_completed_at: data.intake_completed_at,
+    expired: data.intake_expires_at
+      ? new Date(data.intake_expires_at).getTime() < Date.now()
+      : true,
+  };
+}
+
+/**
+ * Record what the preparer submitted.
+ *
+ * Note what this does NOT write: `ptin_verified_at`, `id_sighted_at` and
+ * `w9_received_at` are untouched. A preparer can tell you their PTIN; only the
+ * instructor can say she looked it up. Letting a self-service form tick a
+ * verification box would make the whole checklist worthless.
+ */
+export async function completeIntake(input: {
+  id: string;
+  ptin: string | null;
+  signedName: string;
+  ip: string | null;
+}) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const now = new Date();
+  const patch: Record<string, unknown> = {
+    security_plan_signed_at: now.toISOString().slice(0, 10),
+    plan_signed_name: input.signedName.slice(0, 120),
+    plan_signed_ip: input.ip?.slice(0, 64) ?? null,
+    intake_completed_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  };
+  if (input.ptin) patch.ptin = input.ptin;
+
+  const { error } = await supabase
+    .from("academy_onboarding")
+    .update(patch)
+    .eq("id", input.id);
+
+  if (error) throw new Error(error.message);
+}
+
+/* --------------------------------------------------------------- settings -- */
+
+/** Office-level values Lashanda edits, not the developer. Missing is null,
+ *  never an error: every caller has a sensible answer for "not set yet". */
+export async function getSetting(key: string): Promise<string | null> {
+  const supabase = db();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("academy_settings")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return (data?.value as string) ?? null;
+}
+
+export async function setSetting(key: string, value: string | null, by: string) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { error } = await supabase.from("academy_settings").upsert(
+    {
+      key,
+      value: value && value.trim() ? value.trim().slice(0, 500) : null,
+      updated_at: new Date().toISOString(),
+      updated_by: by,
+    },
+    { onConflict: "key" }
+  );
 
   if (error) throw new Error(error.message);
 }

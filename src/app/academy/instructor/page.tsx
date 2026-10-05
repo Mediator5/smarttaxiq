@@ -8,6 +8,7 @@ import {
   getPendingAccessRequests,
 } from "@/lib/academy/store";
 import { PASS_MARK, quizModules } from "@/content/academy/modules";
+import StaffSignIn from "@/components/academy/StaffSignIn";
 
 /**
  * The cohort dashboard.
@@ -43,7 +44,10 @@ export default async function InstructorPage() {
   if (!academyConfigured() || !sessionSecretConfigured()) notFound();
 
   const viewer = await currentStudent();
-  if (!viewer || viewer.role !== "instructor") notFound();
+  // Signed out is a different situation from signed in as a trainee, and the
+  // two get different answers — see the note in StaffSignIn.
+  if (!viewer) return <StaffSignIn area="cohort progress" />;
+  if (viewer.role !== "instructor") notFound();
 
   const [cohort, requests] = await Promise.all([
     getCohort(viewer.cohort),

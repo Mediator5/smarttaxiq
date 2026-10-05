@@ -6,8 +6,10 @@ import {
   getOnboarding,
   getPendingAccessRequests,
   getRoster,
+  getSetting,
 } from "@/lib/academy/store";
 import OnboardingTracker from "@/components/academy/OnboardingTracker";
+import StaffSignIn from "@/components/academy/StaffSignIn";
 
 /**
  * Who is cleared to prepare returns under the practice's PTIN.
@@ -25,12 +27,16 @@ export default async function OnboardingPage() {
   if (!academyConfigured() || !sessionSecretConfigured()) notFound();
 
   const viewer = await currentStudent();
-  if (!viewer || viewer.role !== "instructor") notFound();
+  // Signed out is a different situation from signed in as a trainee, and the
+  // two get different answers — see the note in StaffSignIn.
+  if (!viewer) return <StaffSignIn area="preparer paperwork" />;
+  if (viewer.role !== "instructor") notFound();
 
-  const [rows, roster, requests] = await Promise.all([
+  const [rows, roster, requests, planUrl] = await Promise.all([
     getOnboarding(),
     getRoster(),
     getPendingAccessRequests(),
+    getSetting("security_plan_url"),
   ]);
 
   // Roster members not already on the checklist, so adding a graduate is one
@@ -58,7 +64,11 @@ export default async function OnboardingPage() {
           <AcademyNav role="instructor" pendingRequests={requests.length} />
         </div>
 
-        <OnboardingTracker rows={rows} rosterSuggestions={rosterSuggestions} />
+        <OnboardingTracker
+          rows={rows}
+          rosterSuggestions={rosterSuggestions}
+          planUrl={planUrl}
+        />
       </div>
     </section>
   );
