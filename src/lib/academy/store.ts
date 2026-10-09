@@ -989,3 +989,252 @@ export async function setSetting(key: string, value: string | null, by: string) 
 
   if (error) throw new Error(error.message);
 }
+
+/* ------------------------------------------------------ uploaded files -- */
+/**
+ * The preparer's own documents: W-9, photo ID, and a free slot for anything
+ * else. Added October 2026, replacing the earlier "tick a box, keep nothing"
+ * design at the practice's request.
+ *
+ * Three rules hold this together, and none of them is optional:
+ *
+ *   1. The bucket is private. Nothing here ever produces a public URL.
+ *      Reading a file means minting a signed URL with the service-role key,
+ *      which `signedUrlForFile` does and which lives for sixty seconds.
+ *
+ *   2. The preparer's filename is never used as a path. Paths are built from
+ *      the row id and a fresh uuid, so no upload can traverse, collide or
+ *      overwrite another.
+ *
+ *   3. Deleting removes the object and keeps the row. "We held a W-9 for this
+ *      person from the 3rd to the 11th, and Lashanda deleted it" is a thing
+ *      she may one day need to be able to say.
+ */
+
+export type UploadKind = "w9" | "id" | "other";
+
+export type OnboardingFile = {
+  id: string;
+  onboarding_id: string;
+  kind: UploadKind;
+  label: string | null;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+};
+
+export const UPLOAD_BUCKET = "onboarding-docs";
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+/** Per preparer. A generous ceiling that still stops a runaway script. */
+export const MAX_FILES_PER_ROW = 20;
+
+/** What a phone camera or a scanner actually produces, and nothing else.
+ *  No zip, no office documents, nothing that executes. */
+export const ALLOWED_UPLOAD_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+  "image/heif": "heif",
+};
+
+/**
+ * Check the bytes, not the label.
+ *
+ * `file.type` is whatever the browser felt like sending and a determined
+ * uploader can set it to anything. This looks at the first few bytes instead.
+ * HEIC is the exception: its signature sits at offset 4 and varies by brand,
+ * so it is matched loosely — it is also the one format that cannot execute
+ * anywhere, so a loose match costs nothing.
+ */
+export function sniffUpload(buf: Buffer): string | null {
+  if (buf.length < 12) return null;
+  if (buf.subarray(0, 4).toString("latin1") === "%PDF") return "application/pdf";
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47
+  ) {
+    return "image/png";
+  }
+  if (
+    buf.subarray(0, 4).toString("latin1") === "RIFF" &&
+    buf.subarray(8, 12).toString("latin1") === "WEBP"
+  ) {
+    return "image/webp";
+  }
+  if (buf.subarray(4, 8).toString("latin1") === "ftyp") {
+    const brand = buf.subarray(8, 12).toString("latin1");
+    if (/^(heic|heix|hevc|heim|heis|hevm|hevs|mif1|msf1)$/.test(brand)) {
+      return "image/heic";
+    }
+  }
+  return null;
+}
+
+const FILE_COLS =
+  "id, onboarding_id, kind, label, file_name, mime_type, size_bytes, uploaded_at, deleted_at, deleted_by" as const;
+
+/** Every live file across every preparer, for the instructor's page. */
+export async function listOnboardingFiles(): Promise<OnboardingFile[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_onboarding_files")
+    .select(FILE_COLS)
+    .is("deleted_at", null)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as OnboardingFile[];
+}
+
+/** One preparer's live files, for their own onboarding page. */
+export async function listFilesFor(
+  onboardingId: string
+): Promise<OnboardingFile[]> {
+  const supabase = db();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("academy_onboarding_files")
+    .select(FILE_COLS)
+    .eq("onboarding_id", onboardingId)
+    .is("deleted_at", null)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as OnboardingFile[];
+}
+
+export async function saveOnboardingFile(input: {
+  onboardingId: string;
+  kind: UploadKind;
+  label: string | null;
+  fileName: string;
+  mimeType: string;
+  bytes: Buffer;
+  ip: string | null;
+}): Promise<OnboardingFile> {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const ext = ALLOWED_UPLOAD_TYPES[input.mimeType];
+  if (!ext) throw new Error("That file type is not accepted.");
+
+  const existing = await listFilesFor(input.onboardingId);
+  if (existing.length >= MAX_FILES_PER_ROW) {
+    throw new Error("That is as many files as this page will hold.");
+  }
+
+  // The preparer's filename is for display only. The path is ours.
+  const path = `${input.onboardingId}/${input.kind}-${crypto.randomUUID()}.${ext}`;
+
+  const up = await supabase.storage
+    .from(UPLOAD_BUCKET)
+    .upload(path, input.bytes, {
+      contentType: input.mimeType,
+      upsert: false,
+    });
+  if (up.error) throw new Error(up.error.message);
+
+  const { data, error } = await supabase
+    .from("academy_onboarding_files")
+    .insert({
+      onboarding_id: input.onboardingId,
+      kind: input.kind,
+      label: input.label?.trim().slice(0, 80) || null,
+      storage_path: path,
+      // Strip directories and anything exotic; this string is shown in HTML
+      // and used as a download filename.
+      file_name:
+        input.fileName
+          .replace(/[^\w.\- ]+/g, "")
+          .replace(/^\.+/, "")
+          .trim()
+          .slice(0, 120) || `document.${ext}`,
+      mime_type: input.mimeType,
+      size_bytes: input.bytes.length,
+      uploaded_ip: input.ip?.slice(0, 64) ?? null,
+    })
+    .select(FILE_COLS)
+    .single();
+
+  if (error) {
+    // Do not leave an orphan object in the bucket behind a failed insert.
+    await supabase.storage.from(UPLOAD_BUCKET).remove([path]);
+    throw new Error(error.message);
+  }
+
+  await touchOnboarding(input.onboardingId);
+  return data as OnboardingFile;
+}
+
+/** Sixty seconds. Long enough to click, short enough that a URL copied out of
+ *  a browser's history is worthless by the time anybody finds it. */
+export async function signedUrlForFile(
+  fileId: string
+): Promise<{ url: string; fileName: string } | null> {
+  const supabase = db();
+  if (!supabase) return null;
+
+  const { data: row, error } = await supabase
+    .from("academy_onboarding_files")
+    .select("storage_path, file_name, deleted_at")
+    .eq("id", fileId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!row || row.deleted_at) return null;
+
+  const signed = await supabase.storage
+    .from(UPLOAD_BUCKET)
+    .createSignedUrl(row.storage_path as string, 60, {
+      download: row.file_name as string,
+    });
+
+  if (signed.error) throw new Error(signed.error.message);
+  return { url: signed.data.signedUrl, fileName: row.file_name as string };
+}
+
+/** Destroy the object; keep the record that it existed. */
+export async function deleteOnboardingFile(fileId: string, by: string) {
+  const supabase = db();
+  if (!supabase) throw new Error("Academy storage is not configured");
+
+  const { data: row, error } = await supabase
+    .from("academy_onboarding_files")
+    .select("storage_path, onboarding_id, deleted_at")
+    .eq("id", fileId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!row) throw new Error("That file is already gone.");
+  if (row.deleted_at) return;
+
+  const rm = await supabase.storage
+    .from(UPLOAD_BUCKET)
+    .remove([row.storage_path as string]);
+  if (rm.error) throw new Error(rm.error.message);
+
+  const { error: markError } = await supabase
+    .from("academy_onboarding_files")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: by.slice(0, 120) })
+    .eq("id", fileId);
+
+  if (markError) throw new Error(markError.message);
+  await touchOnboarding(row.onboarding_id as string);
+}
+
+async function touchOnboarding(id: string) {
+  const supabase = db();
+  if (!supabase) return;
+  await supabase
+    .from("academy_onboarding")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", id);
+}

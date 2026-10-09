@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { OnboardingRow } from "@/lib/academy/store";
+import type { OnboardingFile, OnboardingRow } from "@/lib/academy/store";
 
 /**
  * The preparer onboarding checklist.
@@ -12,11 +12,15 @@ import type { OnboardingRow } from "@/lib/academy/store";
  * four different places. This is the one screen that answers "is she cleared
  * or not" without opening a filing cabinet.
  *
- * Deliberately not an upload form. Every control here records that a document
- * was received or sighted; none of them accepts the document. The reasoning is
- * in supabase/academy.sql above the table, and the short version is that
- * holding an SSN or a licence image behind a one-factor emailed code would not
- * satisfy Michigan's SSN Privacy Act, while holding neither needs nothing.
+ * This page held no documents until October 2026, when the practice asked for
+ * uploads so that a preparer could send everything from one link. It now shows
+ * what each person has sent, hands back a sixty-second signed URL to open one,
+ * and deletes on request. The files themselves live in a private bucket and
+ * never pass through this component.
+ *
+ * Nothing is deleted automatically — that was the practice's call. The age of
+ * every file is therefore shown in days, so a W-9 that has been sitting here
+ * since January says so out loud instead of quietly accumulating.
  *
  * Every write goes to /api/academy/onboarding, which re-checks the
  * instructor role against the database. This component being reachable only
@@ -46,13 +50,13 @@ const CHECKS: Check[] = [
     field: "w9_received_at",
     label: "W-9 received",
     means:
-      "A completed W-9 is on file with your filing service — not here. You will need it to issue their 1099-NEC in January.",
+      "You have their completed W-9 and it is signed. You will need it to issue their 1099-NEC in January.",
   },
   {
     field: "id_sighted_at",
     label: "Photo ID sighted",
     means:
-      "You saw a government photo ID and it matched the name above. No copy is kept, here or anywhere.",
+      "You looked at a government photo ID and it matched the name above.",
   },
   {
     field: "security_plan_signed_at",
@@ -86,8 +90,10 @@ type Reply = {
   ok?: boolean;
   error?: string;
   url?: string;
+  fileName?: string;
   emailed?: boolean;
   days?: number;
+  files?: OnboardingFile[];
 };
 
 type Send = (
@@ -97,10 +103,13 @@ type Send = (
 
 export default function OnboardingTracker({
   rows,
+  files,
   rosterSuggestions,
   planUrl,
 }: {
   rows: OnboardingRow[];
+  /** Every live uploaded document, across everybody. Split per card below. */
+  files: OnboardingFile[];
   /** People on the Academy roster who aren't being tracked yet, so adding a
    *  graduate is one click rather than retyping their address. */
   rosterSuggestions: { email: string; first_name: string; last_name: string | null }[];
@@ -173,34 +182,32 @@ export default function OnboardingTracker({
 
   return (
     <div className="space-y-12">
-      {/* --------------------------------------------- what this is not -- */}
+      {/* ------------------------------------------------ what is here -- */}
       <section className="rounded-2xl border border-ink/10 bg-ice p-6">
         <h2 className="text-[17px] font-bold">
-          Nothing sensitive is stored on this page
+          Real documents are stored here. Treat this page accordingly.
         </h2>
         <p className="mt-3 max-w-[68ch] text-[15px] leading-relaxed text-ink/70">
-          There is no upload button here, and that is on purpose. A tick below
-          records that you received or saw a document, and on what day. The
-          documents stay where they already are:
+          Preparers upload their W-9 and photo ID from their own onboarding
+          link, and those files sit in private storage behind your sign-in.
+          Between them, a W-9 and a driver&rsquo;s licence are everything
+          somebody would need to open credit in that person&rsquo;s name.
         </p>
         <ul className="mt-4 max-w-[68ch] space-y-2.5 text-[15px] leading-relaxed text-ink/70">
           <li>
-            <strong className="text-ink">The W-9</strong> — collect it through a
-            filing service such as Track1099 or TaxBandits, or the client portal
-            in your tax software. That is where the Social Security or EIN
-            number belongs, because those services are built to hold it and are
-            insured for doing so.
+            <strong className="text-ink">Opening a file</strong> creates a link
+            that works for sixty seconds and then stops. There is no address
+            that serves these documents, so one cannot be shared by accident.
           </li>
           <li>
-            <strong className="text-ink">Photo ID</strong> — look at it on a
-            video call and tick the box. Form I-9 identity verification applies
-            to employees, not 1099 contractors, so you are not required to keep
-            a copy. A stored licence image is the riskiest thing you could hold
-            and the hardest to justify holding.
+            <strong className="text-ink">Nothing is deleted for you.</strong>{" "}
+            Every file shows how old it is. Once a W-9 is safely in your filing
+            service and you have ticked the box, delete it here &mdash; the
+            record that you held it and destroyed it is kept either way.
           </li>
           <li>
-            <strong className="text-ink">The PTIN</strong> — just a number. Type
-            it in and check it against the{" "}
+            <strong className="text-ink">The PTIN</strong> is just a number.
+            Check it against the{" "}
             <a
               href="https://irs.treasury.gov/rpo/rpo.jsf"
               target="_blank"
@@ -218,10 +225,13 @@ export default function OnboardingTracker({
           their card and those arrive on their own.
         </p>
         <p className="mt-4 max-w-[68ch] text-[14px] leading-relaxed text-ink/55">
-          Michigan&rsquo;s Social Security Number Privacy Act requires
-          multi-factor authentication on any system an SSN can be reached
-          through. Academy sign-in is a one-time emailed code, which is one
-          factor. Holding no SSN is what keeps this page lawful as it stands.
+          Because you now hold Social Security numbers, Michigan&rsquo;s Social
+          Security Number Privacy Act (MCL 445.84) requires your written
+          security plan to cover five things: keeping them confidential,
+          barring unlawful disclosure, limiting who can see them, how documents
+          holding them are destroyed, and the penalty for breaking the policy.
+          Your sign-in is a single emailed code; adding a second step is the
+          cheapest real improvement available to this page.
         </p>
       </section>
 
@@ -246,6 +256,7 @@ export default function OnboardingTracker({
               <PersonCard
                 key={row.id}
                 row={row}
+                files={files.filter((f) => f.onboarding_id === row.id)}
                 busy={busy}
                 onSend={send}
                 planUrl={planUrl}
@@ -445,11 +456,13 @@ export default function OnboardingTracker({
 
 function PersonCard({
   row,
+  files,
   busy,
   onSend,
   planUrl,
 }: {
   row: OnboardingRow;
+  files: OnboardingFile[];
   busy: string | null;
   onSend: Send;
   planUrl: string | null;
@@ -570,6 +583,9 @@ function PersonCard({
         })}
       </div>
 
+      {/* -------------------------------------------------- documents --- */}
+      <Documents row={row} files={files} busy={busy} onSend={onSend} />
+
       {/* ------------------------------------------------------ notes --- */}
       <div className="mt-5">
         <button
@@ -630,8 +646,8 @@ function PersonCard({
                 <>Expired {pretty(row.intake_expires_at!.slice(0, 10))}</>
               ) : (
                 <>
-                  Not sent. They give you their PTIN and sign the security plan
-                  on it — it asks for nothing else.
+                  Not sent. It is where they give you their PTIN, sign the
+                  security plan, and upload their W-9 and ID.
                 </>
               )}
             </p>
@@ -771,6 +787,154 @@ function PlanLink({
         Open it in a private window before you send anyone a link. A share
         setting that works for you and nobody else is the usual reason a
         preparer stalls here.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------- documents ------- */
+
+const KIND_LABEL: Record<OnboardingFile["kind"], string> = {
+  w9: "W-9",
+  id: "Photo ID",
+  other: "Other",
+};
+
+function sizeOf(n: number) {
+  return n < 1024 * 1024
+    ? `${Math.max(1, Math.round(n / 1024))} KB`
+    : `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Age in whole days, which is the number that matters here: a W-9 nobody has
+ *  cleared out is a liability that grows with exactly this figure. */
+function ageInDays(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+function Documents({
+  row,
+  files,
+  busy,
+  onSend,
+}: {
+  row: OnboardingRow;
+  files: OnboardingFile[];
+  busy: string | null;
+  onSend: Send;
+}) {
+  // Optimistic: a deleted file disappears immediately rather than waiting for
+  // the server round-trip and the refresh behind it.
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const live = files.filter((f) => !removed.includes(f.id));
+
+  async function open(fileId: string) {
+    const reply = await onSend(
+      { action: "file-url", fileId },
+      `open-${fileId}`
+    );
+    if (!reply?.url) return;
+    // A signed URL good for sixty seconds. Opened in a new tab rather than
+    // navigated to, so her place on this page is not lost.
+    window.open(reply.url, "_blank", "noopener,noreferrer");
+  }
+
+  if (live.length === 0) {
+    return (
+      <p className="mt-5 rounded-xl border border-dashed border-ink/15 px-5 py-4 text-[13.5px] leading-relaxed text-ink/50">
+        No documents uploaded yet. They arrive here when{" "}
+        {row.first_name} sends them from their onboarding link.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-ink/12 bg-white px-5 py-4">
+      <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-ink/55">
+        Documents on file
+      </p>
+
+      <ul className="mt-3 divide-y divide-ink/8">
+        {live.map((f) => {
+          const days = ageInDays(f.uploaded_at);
+          const stale = days >= 30;
+          return (
+            <li
+              key={f.id}
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3"
+            >
+              <div className="min-w-0">
+                <p className="text-[14.5px] font-semibold text-ink">
+                  {KIND_LABEL[f.kind]}
+                  {f.label ? ` · ${f.label}` : ""}
+                </p>
+                <p className="mt-0.5 break-all text-[13px] text-ink/55">
+                  {f.file_name} · {sizeOf(f.size_bytes)} ·{" "}
+                  <span className={stale ? "font-semibold text-[#a8341c]" : ""}>
+                    {days === 0
+                      ? "today"
+                      : days === 1
+                        ? "1 day old"
+                        : `${days} days old`}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => open(f.id)}
+                  className="btn-outline px-4 py-2 text-[13.5px]"
+                >
+                  {busy === `open-${f.id}` ? "Opening…" : "Open"}
+                </button>
+
+                {confirming === f.id ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={async () => {
+                        const ok = await onSend(
+                          { action: "file-delete", fileId: f.id },
+                          `del-${f.id}`
+                        );
+                        if (ok) setRemoved((p) => [...p, f.id]);
+                        setConfirming(null);
+                      }}
+                      className="rounded-lg bg-[#a8341c] px-4 py-2 text-[13.5px] font-semibold text-white"
+                    >
+                      {busy === `del-${f.id}` ? "Deleting…" : "Delete for good"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(null)}
+                      className="px-2 py-2 text-[13.5px] text-ink/55 underline underline-offset-4"
+                    >
+                      Keep
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => setConfirming(f.id)}
+                    className="px-3 py-2 text-[13.5px] text-ink/55 underline underline-offset-4 hover:text-[#a8341c]"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <p className="mt-3 text-[12.5px] leading-relaxed text-ink/45">
+        Deleting destroys the file. The record that it was here, and that you
+        deleted it, is kept.
       </p>
     </div>
   );

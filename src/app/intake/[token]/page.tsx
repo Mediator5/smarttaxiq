@@ -4,25 +4,34 @@ import {
   academyConfigured,
   findByIntakeToken,
   getSetting,
+  listFilesFor,
+  type OnboardingFile,
 } from "@/lib/academy/store";
 import { site } from "@/lib/site";
 import IntakeForm from "@/components/academy/IntakeForm";
+import IntakeUploads from "@/components/academy/IntakeUploads";
 
 /**
  * The preparer's own onboarding page.
  *
  * No account and no password: the token in the URL is the credential, the way
- * a W-9 request from a filing service works. That is proportionate here for
- * one reason and one reason only — nothing on this page is sensitive. It asks
- * for a PTIN, which is a public credential number, and a typed signature on a
- * document the person has read. If it ever asked for anything more, a bearer
- * link would stop being enough and this would need real accounts.
+ * a W-9 request from a filing service works. The token is 256 bits, stored
+ * only as a hash, dies after three weeks, and is retired the moment a new one
+ * is issued.
  *
- * It deliberately does not ask for, and cannot accept, a Social Security
- * number, a date of birth, a bank detail or a file. The page says so out loud,
- * because an unexpected email asking a tax preparer for their credentials is
- * shaped exactly like a phishing attempt, and the honest version has to work
- * harder than the dishonest one to look legitimate.
+ * As of October 2026 this page takes documents — a W-9 and a photo ID among
+ * them — at the practice's request. That raised the stakes of the bearer link
+ * considerably, so note what still holds: the link can WRITE files and can
+ * READ nothing. There is no endpoint that will hand a document back, not even
+ * to the person who uploaded it; the list below their upload is metadata the
+ * page already knew. Somebody who intercepts a link can post a junk PDF into
+ * one preparer's record. They cannot retrieve that preparer's licence.
+ *
+ * An unexpected email asking a tax preparer to upload their W-9 is shaped
+ * exactly like a phishing attempt, which it should be, because most of them
+ * are. The honest version therefore has to work harder than the dishonest one
+ * to look legitimate: hence the panel telling them what we will never ask for
+ * and a phone number to check on.
  */
 export const dynamic = "force-dynamic";
 
@@ -45,6 +54,7 @@ export default async function IntakePage({
   if (!person) notFound();
 
   const planUrl = await getSetting("security_plan_url");
+  const files = await listFilesFor(person.id);
 
   return (
     <section className="py-14 sm:py-20">
@@ -57,7 +67,7 @@ export default async function IntakePage({
         </h1>
 
         {person.intake_completed_at ? (
-          <Done person={person} />
+          <Done person={person} token={params.token} files={files} />
         ) : person.expired ? (
           <Expired />
         ) : (
@@ -67,26 +77,7 @@ export default async function IntakePage({
               our security plan. It takes about two minutes.
             </p>
 
-            <div className="mt-8 rounded-2xl border border-ink/10 bg-ice p-6">
-              <h2 className="text-[16px] font-bold">
-                What this page will never ask you for
-              </h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
-                Your Social Security number, your date of birth, your bank
-                details, a password, or a photograph of any document. There is
-                no upload button on this page and there is not going to be one.
-              </p>
-              <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
-                Your W-9 comes separately, as its own request from our filing
-                service. That is the only place your Social Security number
-                should ever be typed. If any page claiming to be ours asks for
-                one of the things above, close it and call{" "}
-                <a href={`tel:${site.phone.replace(/[^\d+]/g, "")}`} className="font-semibold text-ink underline underline-offset-2">
-                  {site.phone}
-                </a>
-                .
-              </p>
-            </div>
+            <Phishing />
 
             <IntakeForm
               token={params.token}
@@ -96,10 +87,47 @@ export default async function IntakePage({
               ptin={person.ptin}
               planUrl={planUrl}
             />
+
+            <IntakeUploads token={params.token} initialFiles={files} />
           </>
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * The panel that has to out-compete a phishing email.
+ *
+ * It can no longer say "we will never ask you for a document", because now we
+ * do. So it says the things that remain true and are actually diagnostic: we
+ * never ask you to TYPE an SSN, never ask for a password, never ask for
+ * money, and there is a phone number you can check on. A fake page can copy
+ * this text; it cannot answer that phone.
+ */
+function Phishing() {
+  const tel = site.phone.replace(/[^\d+]/g, "");
+  return (
+    <div className="mt-8 rounded-2xl border border-ink/10 bg-ice p-6">
+      <h2 className="text-[16px] font-bold">Before you send anything</h2>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
+        This page asks for your W-9 and your photo ID as files, because we need
+        them to pay you and to confirm you are you. It will never ask you to
+        type a Social Security number into a box, never ask for a password, and
+        never ask you for money.
+      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
+        If anything here feels off &mdash; or if you were not expecting this
+        link &mdash; stop and call{" "}
+        <a
+          href={`tel:${tel}`}
+          className="font-semibold text-ink underline underline-offset-2"
+        >
+          {site.phone}
+        </a>{" "}
+        before you upload a thing. We would much rather take that call.
+      </p>
+    </div>
   );
 }
 
@@ -123,14 +151,24 @@ function Expired() {
 
 function Done({
   person,
+  token,
+  files,
 }: {
   person: { plan_signed_name: string | null; ptin: string | null };
+  token: string;
+  files: OnboardingFile[];
 }) {
+  const missing = [
+    files.some((f) => f.kind === "w9") ? null : "your W-9",
+    files.some((f) => f.kind === "id") ? null : "your photo ID",
+  ].filter(Boolean) as string[];
+
   return (
     <div className="mt-6">
       <p className="lede">
-        We have everything we need from this page. Nothing further is required
-        of you here.
+        {missing.length
+          ? `Your PTIN and signature are in. We still need ${missing.join(" and ")}.`
+          : "We have everything we need from you. Nothing further is required here."}
       </p>
 
       <dl className="mt-8 divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-white">
@@ -139,7 +177,7 @@ function Done({
             PTIN recorded
           </dt>
           <dd className="font-mono text-[15.5px] text-ink">
-            {person.ptin ?? "—"}
+            {person.ptin ?? "\u2014"}
           </dd>
         </div>
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-6 py-4">
@@ -147,16 +185,14 @@ function Done({
             Security plan signed by
           </dt>
           <dd className="text-[15.5px] text-ink">
-            {person.plan_signed_name ?? "—"}
+            {person.plan_signed_name ?? "\u2014"}
           </dd>
         </div>
       </dl>
 
-      <p className="mt-6 text-[15px] leading-relaxed text-ink/65">
-        Your W-9 is handled separately. If you have not had that request yet,
-        it is still coming — it arrives from our filing service, not from this
-        page.
-      </p>
+      {/* The link stays useful after submitting. Most people send the two
+          quick fields immediately and go hunting for their W-9 afterwards. */}
+      <IntakeUploads token={token} initialFiles={files} />
     </div>
   );
 }

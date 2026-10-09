@@ -60,7 +60,8 @@ there; skipping it is what breaks a new page.
 | `academy_access_requests` | people who asked to be added |
 | `academy_modules` | the instructor's video and note per module |
 | `academy_announcements` | notices to the cohort |
-| `academy_onboarding` | preparer paperwork checklist — no SSN, no documents |
+| `academy_onboarding` | preparer paperwork checklist |
+| `academy_onboarding_files` | metadata for documents in the private `onboarding-docs` bucket |
 | `academy_settings` | office-level values Lashanda edits, e.g. the security plan link |
 
 **Change Lashanda's email before you run it.** The seed at the bottom inserts
@@ -209,56 +210,74 @@ sitemap.** It is a private training area for five named people, not content.
 
 ---
 
-## Preparer onboarding — what it does not store
+## Preparer onboarding and the documents it holds
 
 `/academy/onboarding` tracks whether each preparer is cleared to work under the
-practice's PTIN. It holds a PTIN number, four dates, and a note. It holds **no
-Social Security number, no date of birth, no licence number, and no uploaded
-file**, and there is no Supabase Storage bucket anywhere in this project.
+practice's PTIN: a PTIN number, four dates, a note — and, since **October
+2026**, their actual W-9, photo ID and anything else they were asked for.
 
-That is the design, not a stage one. Two rules apply to a system that can reach
-an SSN online:
+### What changed, and the earlier advice that was wrong
 
-- **Michigan's Social Security Number Privacy Act** requires a written privacy
-  policy, secure transmission, and **multi-factor authentication** on any
-  system through which an SSN can be reached. Academy sign-in is a one-time
-  emailed code — good authentication, but one factor. Statutory damages run to
-  $1,000 per violation plus fees, with a private right of action.
-- **The FTC Safeguards Rule** adds encryption at rest and in transit, access
-  controls, a named Qualified Individual, vendor oversight, secure disposal and
-  30-day breach notification. A PTIN holder without a compliant written
-  information security plan is risking the credential.
+Until October 2026 this page deliberately stored no documents, and this file
+justified that by saying Michigan's Social Security Number Privacy Act
+*requires multi-factor authentication on any system through which an SSN can be
+reached*. **That is not what the statute says.** MCL 445.84 requires a person
+who obtains SSNs in the ordinary course of business to publish a written
+privacy policy covering five things — confidentiality, no unlawful disclosure,
+limited access, a described disposal method, and a penalty for breaking it. It
+mandates no technical control at all, MFA included.
 
-So the sensitive items are routed to services already carrying that burden:
+The MFA requirement is the **FTC Safeguards Rule**, 16 CFR 314.4(c)(5), and it
+is scoped to an information system containing *customer* information —
+nonpublic personal information about a customer of the financial institution. A
+contractor's own W-9 is not customer information. So holding these documents
+does not put the practice in breach of either rule.
 
-| Item | Where it goes | Why not here |
-|---|---|---|
-| W-9 (SSN or EIN) | Track1099, TaxBandits, or the client portal in the tax software | They are built and insured to hold it; this site would need MFA to hold it lawfully |
-| Photo ID | Sighted on a call, ticked off, no copy kept | Form I-9 applies to employees, not 1099 contractors — there is no duty to retain one, and a stored licence image is the highest-risk item on the list |
-| PTIN | Typed in, checked against the IRS directory | It is a public credential number, not a secret |
+What remains true is the risk, which is unchanged by any of the above: a W-9
+and a driver's licence together are enough to open credit in somebody's name,
+and they now sit behind a single emailed code. **Adding a second factor to
+Academy sign-in is the outstanding work item on this feature.** It was offered
+and declined in October 2026; the Onboarding page says so to the instructor's
+face, which is the right place for that argument to live.
 
-**If anyone ever asks for an upload button on that page, the answer is a new
-conversation about MFA and a WISP, not a new column.**
-
-### The preparer's own link
-
-Two of the four checks are things only the preparer can supply, so they get
-their own page. On the Onboarding tab, **Send intake link** on somebody's card
-mints a one-off URL — `/intake/<token>` — emails it to them, and shows it once
-so it can also be passed on by hand.
+### How the storage works
 
 | | |
 |---|---|
-| What they do there | Enter their PTIN, read the security plan, sign the acknowledgement by typing their full name |
-| What it cannot do | Accept a file, an SSN, a date of birth or a bank detail. There is no upload control on the page |
-| What it cannot tick | `ptin_verified_at`, `id_sighted_at`, `w9_received_at`. Those are Lashanda's statements about what *she* checked — a self-service form that could tick a verification box would make the checklist worthless |
-| Lifetime | 21 days, one submission. Sending a new link retires the old one |
-| Storage | Only the SHA-256 hash of the token, as with sign-in codes. The URL is shown exactly once and cannot be recovered |
+| Bucket | `onboarding-docs`, **private** (`public => false`). Created by `supabase/academy.sql` |
+| Table | `academy_onboarding_files` — metadata only, no bytes in Postgres |
+| Accepted | PDF, JPEG, PNG, WebP, HEIC. 10 MB each, 20 files per preparer |
+| Type checking | The first bytes of the file are sniffed; `file.type` from the browser is a label and is only used to reject a mismatch |
+| Paths | `<onboarding_id>/<kind>-<uuid>.<ext>`. The preparer's filename is display text and never touches the path |
+| Reading | A signed URL minted server-side, **60 seconds**, only behind the instructor gate |
+| Deleting | Removes the object, keeps the row with `deleted_at` and `deleted_by` |
+| Automatic deletion | **None.** Chosen deliberately. Every file shows its age in days on the card, and anything over 30 days is flagged red |
 
-The token in the URL is the credential — no account, no password — the same
-shape a W-9 request from a filing service uses. **That is only proportionate
-because nothing behind it is sensitive.** If that page ever needed to hold
-something that was, a bearer link would stop being good enough.
+There is no endpoint that returns a document to the preparer — the intake link
+can write files and cannot read them. Somebody who intercepts a link can post a
+junk PDF into one record; they cannot retrieve that person's licence.
+
+### What the tick boxes mean now
+
+`w9_received_at` and `id_sighted_at` are still **Lashanda's** statements, and an
+upload does not tick either one. A file arriving is evidence; the tick is her
+saying she looked at it. Keeping those separate is what makes the checklist
+worth anything.
+
+### The preparer's own link
+
+On the Onboarding tab, **Send intake link** on somebody's card mints a one-off
+URL — `/intake/<token>` — emails it to them, and shows it once so it can also
+be passed on by hand.
+
+| | |
+|---|---|
+| What they do there | Enter their PTIN, read the security plan, sign by typing their full name, and upload their W-9, photo ID and anything else |
+| Uploads | Send on selection, one at a time, with no save step. The page keeps working **after** submission until the link expires — people send the two quick fields immediately and go hunting for their W-9 afterwards |
+| What it cannot tick | `ptin_verified_at`, `id_sighted_at`, `w9_received_at` |
+| What it cannot read | Any uploaded document, including their own |
+| Lifetime | 21 days. Sending a new link retires the old one |
+| Storage | Only the SHA-256 hash of the token. The URL is shown exactly once and cannot be recovered |
 
 Set the **security plan link** at the bottom of the Onboarding tab before
 sending anyone a link, or they are asked to sign a plan nobody gave them. Any

@@ -5,6 +5,7 @@ import {
   academyConfigured,
   getOnboarding,
   getPendingAccessRequests,
+  listOnboardingFiles,
   getRoster,
   getSetting,
 } from "@/lib/academy/store";
@@ -32,8 +33,9 @@ export default async function OnboardingPage() {
   if (!viewer) return <StaffSignIn area="preparer paperwork" />;
   if (viewer.role !== "instructor") notFound();
 
-  const [rows, roster, requests, planUrl] = await Promise.all([
+  const [rows, files, roster, requests, planUrl] = await Promise.all([
     getOnboarding(),
+    listOnboardingFiles(),
     getRoster(),
     getPendingAccessRequests(),
     getSetting("security_plan_url"),
@@ -66,6 +68,7 @@ export default async function OnboardingPage() {
 
         <OnboardingTracker
           rows={rows}
+          files={files}
           rosterSuggestions={rosterSuggestions}
           planUrl={planUrl}
         />

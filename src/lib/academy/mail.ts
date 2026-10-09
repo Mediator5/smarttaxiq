@@ -323,8 +323,9 @@ export async function sendIntakeLink(input: {
         starts. ${from} has set up a page for them.
       </p>
       <p style="margin:0 0 22px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
-        It takes about two minutes: your <strong>PTIN</strong>, and your
-        signature on our security plan once you have read it.
+        It takes a few minutes: your <strong>PTIN</strong>, your signature on
+        our security plan once you have read it, and a photo or PDF of your
+        <strong>W-9</strong> and your <strong>photo ID</strong>.
       </p>
       <p style="margin:0 0 22px;text-align:center">
         <a href="${url}" style="display:inline-block;padding:14px 28px;background:${GOLD};border-radius:10px;
@@ -357,7 +358,7 @@ export async function sendIntakeLink(input: {
 
   const text = `${input.firstName}, there are two things we need from you before the season starts. ${input.fromName} has set up a page for them.
 
-It takes about two minutes: your PTIN, and your signature on our security plan once you have read it.
+It takes a few minutes: your PTIN, your signature on our security plan once you have read it, and a photo or PDF of your W-9 and your photo ID.
 
 ${url}
 

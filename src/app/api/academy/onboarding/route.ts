@@ -3,10 +3,13 @@ import { currentStudent } from "@/lib/academy/auth";
 import {
   academyConfigured,
   createIntakeToken,
+  deleteOnboardingFile,
   getOnboarding,
+  listOnboardingFiles,
   saveOnboarding,
   setOnboardingArchived,
   setSetting,
+  signedUrlForFile,
   upsertOnboarding,
   INTAKE_DAYS,
 } from "@/lib/academy/store";
@@ -24,10 +27,11 @@ export const dynamic = "force-dynamic";
  * carries an id; the roster decides what that id may do. A trainee gets 404,
  * not 403, because there is no reason to confirm this endpoint exists.
  *
- * Nothing sensitive passes through here. The only free-text fields are a
- * name, an email, a PTIN and a note. There is no file upload, no SSN and no
- * document reference anywhere in the payload — see the comment above
- * academy_onboarding in supabase/academy.sql for why that is the whole point.
+ * The payload itself carries nothing sensitive: a name, an email, a PTIN and
+ * a note. Since October 2026 it can also ask for a document — but only ever
+ * by id, and the answer is a signed URL that expires in sixty seconds. No
+ * file bytes cross this route in either direction, and the bucket behind it
+ * is private, so that short-lived URL is the only way a W-9 can be read.
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -228,6 +232,51 @@ export async function POST(request: Request) {
       }
       await setSetting("security_plan_url", raw || null, viewer.id);
       return NextResponse.json({ ok: true });
+    }
+
+    /* ---------------------------------------------------- documents -- */
+    // Files are listed with the page, not fetched one at a time. This action
+    // exists so the list can be refreshed after a delete without a reload.
+    if (action === "files") {
+      return NextResponse.json({ ok: true, files: await listOnboardingFiles() });
+    }
+
+    // Hand back a URL, never the file. The URL is good for sixty seconds and
+    // for one preparer's one document.
+    if (action === "file-url") {
+      const fileId = typeof body?.fileId === "string" ? body.fileId : "";
+      if (!fileId) {
+        return NextResponse.json(
+          { ok: false, error: "Which file?" },
+          { status: 400 }
+        );
+      }
+      const signed = await signedUrlForFile(fileId);
+      if (!signed) {
+        return NextResponse.json(
+          { ok: false, error: "That file is no longer here." },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ ok: true, ...signed });
+    }
+
+    // Destroys the object in the bucket. The row stays, carrying the date and
+    // who did it, because "we deleted it on the 11th" is the answer to a
+    // question that may well get asked.
+    if (action === "file-delete") {
+      const fileId = typeof body?.fileId === "string" ? body.fileId : "";
+      if (!fileId) {
+        return NextResponse.json(
+          { ok: false, error: "Which file?" },
+          { status: 400 }
+        );
+      }
+      await deleteOnboardingFile(
+        fileId,
+        `${viewer.first_name} ${viewer.last_name ?? ""}`.trim() || viewer.id
+      );
+      return NextResponse.json({ ok: true, files: await listOnboardingFiles() });
     }
 
     /* -------------------------------------------------------- archive -- */

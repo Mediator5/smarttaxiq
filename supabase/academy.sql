@@ -366,3 +366,75 @@ on conflict (email) do update
 --
 --   delete from academy_login_codes
 --   where used_at is not null or expires_at < now() - interval '1 day';
+
+-- ===========================================================================
+-- UPLOADED DOCUMENTS                                       (added Oct 2026)
+-- ===========================================================================
+-- The preparer can now attach their W-9, their photo ID and anything else
+-- from their own onboarding link, instead of emailing them around.
+--
+-- Read this before changing anything here, because the reasoning is the whole
+-- safety of the feature:
+--
+--   * A W-9 carries a Social Security or EIN number. A driver's licence
+--     carries everything an identity thief needs. These are the two most
+--     sensitive documents this practice will ever hold about its own staff.
+--
+--   * The files therefore live in a PRIVATE Supabase Storage bucket. Private
+--     means there is no URL that serves them. The only way to read one is a
+--     signed URL minted server-side, which this app does only after checking
+--     the instructor's session, and which dies after sixty seconds.
+--
+--   * This table holds metadata only. No file bytes in Postgres.
+--
+--   * Rows are kept after a file is deleted, with deleted_at and deleted_by
+--     filled in. The file is gone from storage; the record that it existed
+--     and who destroyed it stays. That audit trail is what lets Lashanda
+--     answer "what did you hold, and what happened to it" — which is exactly
+--     the question asked after a breach, and the "proper disposal" element
+--     Michigan's Social Security Number Privacy Act (MCL 445.84) requires her
+--     written policy to describe.
+--
+-- Nothing deletes automatically. That was a deliberate choice: files stay
+-- until somebody presses Delete. The Onboarding page shows the age of every
+-- file in days so that choice stays visible rather than quietly accumulating.
+
+-- The bucket. `public => false` is the single most important value in this
+-- file; flipping it to true would put every W-9 on the open internet.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('onboarding-docs', 'onboarding-docs', false, 10485760)
+on conflict (id) do update
+  set public = false,
+      file_size_limit = 10485760;
+
+-- No storage RLS policies are created, matching every other table here. With
+-- RLS on and no policies the anon and publishable keys can read nothing; the
+-- Next.js server reaches the bucket with the service-role key alone.
+
+create table if not exists academy_onboarding_files (
+  id            uuid primary key default gen_random_uuid(),
+  onboarding_id uuid not null
+                  references academy_onboarding (id) on delete cascade,
+  -- What the preparer said it is. 'other' is the free slot and is the only
+  -- kind that uses `label`.
+  kind          text not null check (kind in ('w9', 'id', 'other')),
+  label         text,
+  -- Path inside the bucket. Generated server-side from the row id and a uuid:
+  -- the preparer's own filename never reaches the filesystem.
+  storage_path  text not null unique,
+  -- Their filename, kept only so the instructor sees something recognisable
+  -- and the download arrives with a sensible name.
+  file_name     text not null,
+  mime_type     text not null,
+  size_bytes    integer not null,
+  uploaded_at   timestamptz not null default now(),
+  uploaded_ip   text,
+  -- Set when the object is removed from the bucket. The row survives.
+  deleted_at    timestamptz,
+  deleted_by    text
+);
+
+create index if not exists academy_onboarding_files_row_idx
+  on academy_onboarding_files (onboarding_id, uploaded_at desc);
+
+alter table academy_onboarding_files enable row level security;
