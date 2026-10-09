@@ -1027,7 +1027,11 @@ export type OnboardingFile = {
 };
 
 export const UPLOAD_BUCKET = "onboarding-docs";
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+/** Four megabytes, because the hosting platform rejects a request body over
+ *  about 4.5 MB before this code is reached. The browser shrinks photographs
+ *  before sending; this is the backstop for anything that arrives another
+ *  way. */
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 /** Per preparer. A generous ceiling that still stops a runaway script. */
 export const MAX_FILES_PER_ROW = 20;
 

@@ -61,6 +61,52 @@ const KINDS: {
 
 const ACCEPT = "application/pdf,image/jpeg,image/png,image/heic,image/heif";
 
+/**
+ * The real ceiling is the hosting platform's request body limit (about
+ * 4.5 MB), not anything this app chose — so a 6 MB photo straight off a
+ * modern phone fails at the edge, before any of our code runs, with an error
+ * nobody can act on. Found in testing, which is the only way it would have
+ * been found.
+ *
+ * Rather than tell preparers to go and shrink their own photographs, images
+ * are resized here first. A document photographed at 2200px on the long edge
+ * is far more readable than it needs to be and lands around 400 KB.
+ */
+const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_EDGE = 2200;
+
+async function shrinkIfImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  if (file.size <= 600 * 1024) return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.82)
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    const base = file.name.replace(/\.[^.]+$/, "") || "photo";
+    return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+  } catch {
+    // HEIC that this browser cannot decode, or a canvas that refused. Send
+    // the original and let the size check below give an honest answer.
+    return file;
+  }
+}
+
 function prettySize(n: number) {
   return n < 1024 * 1024
     ? `${Math.max(1, Math.round(n / 1024))} KB`
@@ -110,10 +156,20 @@ export default function IntakeUploads({
     void refresh();
   }, [refresh]);
 
-  async function upload(kind: UploadKind, file: File) {
+  async function upload(kind: UploadKind, chosen: File) {
     setBusyKind(kind);
     setError(null);
     try {
+      const file = await shrinkIfImage(chosen);
+      if (file.size > MAX_BYTES) {
+        setError(
+          file.type === "application/pdf"
+            ? "That PDF is too big to send (over 4 MB). Photograph the document instead, or save it at a smaller size."
+            : "That file is too big to send, even after shrinking it. Try photographing it again."
+        );
+        return;
+      }
+
       const body = new FormData();
       body.set("token", token);
       body.set("kind", kind);
@@ -175,8 +231,8 @@ export default function IntakeUploads({
       )}
 
       <p className="max-w-[58ch] text-[14px] leading-relaxed text-ink/55">
-        PDF or photo, up to 10 MB each. These go straight into Smart Tax IQ&rsquo;s
-        private storage — there is no public address for them, and only your
+        PDF or photo. Photos are shrunk automatically, so take them however
+        you like. These go straight into Smart Tax IQ&rsquo;s private storage — there is no public address for them, and only your
         instructor can open them.
       </p>
     </section>

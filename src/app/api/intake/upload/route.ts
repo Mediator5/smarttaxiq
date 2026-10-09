@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         {
           ok: false,
           error:
-            "That file is over 10 MB. A photo taken on a phone is usually well under that.",
+            "That file is too big to send. Photograph the document instead of attaching a large scan.",
         },
         { status: 413 }
       );
