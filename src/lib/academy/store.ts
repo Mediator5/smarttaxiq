@@ -31,7 +31,21 @@ function db() {
       // Never expose this key, and never prefix it with NEXT_PUBLIC_. It
       // bypasses RLS and can read every student's scores.
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } }
+      {
+        auth: { persistSession: false },
+        // Next.js wraps global fetch and caches GET responses in its Data
+        // Cache. supabase-js reads through that fetch, so a select can be
+        // served from a cache entry minted on an earlier request — which is
+        // exactly what happened on /intake/[token]: the page kept rendering
+        // the state the row was in the first time anybody loaded it, while
+        // route handlers (which read cookies and so opt out) saw the truth.
+        // `force-dynamic` on the route does not cover this. Opting out here
+        // fixes every call site at once rather than one at a time.
+        global: {
+          fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+            fetch(input, { ...init, cache: "no-store" }),
+        },
+      }
     );
   }
   return client;
