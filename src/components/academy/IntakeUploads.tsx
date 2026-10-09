@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnboardingFile, UploadKind } from "@/lib/academy/store";
 
 /**
@@ -23,6 +23,13 @@ import type { OnboardingFile, UploadKind } from "@/lib/academy/store";
  *   - Nothing here can delete. A preparer who uploads the wrong page should
  *     upload the right one and say so; letting a bearer link destroy records
  *     it can also read is a trade with no upside.
+ *
+ *   - The list is re-fetched on mount rather than trusted from the server
+ *     render. The server-rendered copy came back empty in production even
+ *     with the route forced dynamic, while the same query through the route
+ *     handler returned everything — so the server render is treated as a
+ *     first paint and this is the authority. It also means a second device,
+ *     or a tab left open since yesterday, shows what is really there.
  */
 
 const KINDS: {
@@ -82,6 +89,27 @@ export default function IntakeUploads({
   const [error, setError] = useState<string | null>(null);
   const [label, setLabel] = useState("");
 
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/intake/upload?token=${encodeURIComponent(token)}`,
+        { cache: "no-store" }
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        files?: OnboardingFile[];
+      };
+      if (res.ok && data.ok && Array.isArray(data.files)) setFiles(data.files);
+    } catch {
+      // Offline or a flaky connection. The list stays as it is; an upload
+      // would have failed loudly anyway.
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
   async function upload(kind: UploadKind, file: File) {
     setBusyKind(kind);
     setError(null);
@@ -105,6 +133,7 @@ export default function IntakeUploads({
       }
       setFiles((prev) => [data.file as OnboardingFile, ...prev]);
       if (kind === "other") setLabel("");
+      void refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection.");
     } finally {

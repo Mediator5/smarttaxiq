@@ -63,7 +63,7 @@ export default async function IntakePage({
         <h1 className="mt-3 text-[clamp(28px,4.8vw,40px)] leading-[1.08]">
           {person.intake_completed_at
             ? "You're all set"
-            : `Two things, ${person.first_name}`}
+            : `A few things, ${person.first_name}`}
         </h1>
 
         {person.intake_completed_at ? (
@@ -73,8 +73,9 @@ export default async function IntakePage({
         ) : (
           <>
             <p className="lede mt-5">
-              Before the season starts we need your PTIN and your signature on
-              our security plan. It takes about two minutes.
+              Before the season starts we need your PTIN, your signature on our
+              security plan, and a copy of your W-9 and photo ID. You can send
+              them one at a time and come back for the rest.
             </p>
 
             <Phishing />
