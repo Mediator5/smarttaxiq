@@ -286,3 +286,5 @@ two ways:
 | Signed in, but the course area is blank | `course.html` did not make it into the bundle — check `outputFileTracingIncludes` in `next.config.mjs` |
 | "Your score didn't save" | The progress write failed. The function log has the Supabase error |
 | Dashboard 404s for Lashanda | Her row has `role = 'student'`, or a different `cohort` from the students |
+| "You're not on the roster" for an address that plainly is | The stored email has a capital letter. Sign-in lowercases what is typed, Postgres `=` is case-sensitive, so `Info@` never matches `info@`. The schema now lowercases on write with a trigger — re-run `academy.sql` and it also repairs existing rows |
+| Code never arrives at a new instructor address | Check the address is a real mailbox and not a forward-only alias. The roster lookup and the delivery are separate failures and look identical from the sign-in page |

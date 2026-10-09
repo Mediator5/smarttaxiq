@@ -278,6 +278,50 @@ create table if not exists academy_settings (
 
 alter table academy_settings enable row level security;
 
+-- ------------------------------------------------------ email normalising ---
+-- Email is the identity for sign-in, and sign-in lowercases what the person
+-- types before looking it up. If a row is stored with any capital letter, the
+-- lookup silently finds nothing and the person is told they are not on the
+-- roster — which is true of the query and false of reality. It happened the
+-- first time somebody typed an address into the Supabase table editor by hand
+-- with a capital I.
+--
+-- The application already normalises on every write it makes. This makes the
+-- database enforce it regardless of how the row arrived: SQL editor, table UI,
+-- a future import, or a developer in a hurry. The fix belongs here rather than
+-- in the code, because the mistake is made outside the code.
+create or replace function academy_lower_email()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.email := lower(trim(new.email));
+  return new;
+end;
+$$;
+
+drop trigger if exists academy_students_lower_email on academy_students;
+create trigger academy_students_lower_email
+  before insert or update on academy_students
+  for each row execute function academy_lower_email();
+
+drop trigger if exists academy_onboarding_lower_email on academy_onboarding;
+create trigger academy_onboarding_lower_email
+  before insert or update on academy_onboarding
+  for each row execute function academy_lower_email();
+
+drop trigger if exists academy_access_requests_lower_email on academy_access_requests;
+create trigger academy_access_requests_lower_email
+  before insert or update on academy_access_requests
+  for each row execute function academy_lower_email();
+
+-- Repair anything already stored with capitals. Safe to run repeatedly; it is
+-- a no-op once everything is lower case. If it fails on the unique index, two
+-- rows collide once lowercased and one of them has to go.
+update academy_students    set email = lower(trim(email)) where email <> lower(trim(email));
+update academy_onboarding  set email = lower(trim(email)) where email <> lower(trim(email));
+update academy_access_requests set email = lower(trim(email)) where email <> lower(trim(email));
+
 -- --------------------------------------------------------------- lockdown ---
 alter table academy_students    enable row level security;
 alter table academy_login_codes enable row level security;
