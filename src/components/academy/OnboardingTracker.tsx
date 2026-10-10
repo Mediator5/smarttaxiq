@@ -835,9 +835,19 @@ function Documents({
       `open-${fileId}`
     );
     if (!reply?.url) return;
-    // A signed URL good for sixty seconds. Opened in a new tab rather than
-    // navigated to, so her place on this page is not lost.
-    window.open(reply.url, "_blank", "noopener,noreferrer");
+
+    // A signed URL good for sixty seconds, handed to the browser as a
+    // download. Deliberately an anchor rather than window.open: the URL only
+    // exists after an awaited round-trip, by which point the click is no
+    // longer a "user gesture" and a popup blocker may swallow window.open
+    // without saying anything. An anchor with `download` is never blocked.
+    const a = document.createElement("a");
+    a.href = reply.url;
+    a.download = reply.fileName ?? "";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   if (live.length === 0) {
