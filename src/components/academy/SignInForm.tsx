@@ -295,7 +295,7 @@ export default function SignInForm() {
               maxLength={600}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. I applied through the Facebook ad on 20 September"
+              placeholder="e.g. I applied through the Facebook ad on September 20"
               className={`${inputClass} resize-y leading-relaxed`}
             />
           </div>

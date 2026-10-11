@@ -10,7 +10,7 @@
   It is rendered with dangerouslySetInnerHTML from a server component. That is
   safe here and nowhere near user input: this file ships in the repository, it
   is reviewed in pull requests like any other source file, and nothing a
-  student types ever reaches it. The quiz and progress behaviour attaches to
+  student types ever reaches it. The quiz and progress behavior attaches to
   the `.quiz` / `.qq` / `.reveal` markup from the client, exactly as the
   standalone version does.
 
@@ -282,12 +282,12 @@
       </div>
 
       <h3>The rule that settles a third of all questions</h3>
-      <p><strong>Marital status is decided on 31 December.</strong> Not on average over the year. Not when they separated.</p>
-      <p>Divorced on 30 December? Unmarried for the entire year. Married on 30 December? Married for the entire year. Ask the date, every time.</p>
+      <p><strong>Marital status is decided on December 31.</strong> Not on average over the year. Not when they separated.</p>
+      <p>Divorced on December 30? Unmarried for the entire year. Married on December 30? Married for the entire year. Ask the date, every time.</p>
 
       <h3>Head of Household — three tests, all required</h3>
       <ol class="b">
-        <li><strong>Unmarried</strong> on 31 December — or "considered unmarried", which we'll come to</li>
+        <li><strong>Unmarried</strong> on December 31 — or "considered unmarried", which we'll come to</li>
         <li><strong>Paid more than half</strong> the cost of keeping up the home for the year</li>
         <li>A <strong>qualifying person</strong> lived with them for more than half the year</li>
       </ol>
@@ -327,21 +327,21 @@
       </div>
 
       <div class="try"><strong class="tl">Try it · 2 of 4</strong>
-        <p class="q">Marcus's divorce was finalised on 18 December 2026. His nine-year-old daughter lived with him all year and he paid every bill in the house.</p>
+        <p class="q">Marcus's divorce was finalized on December 18, 2026. His nine-year-old daughter lived with him all year and he paid every bill in the house.</p>
         <button class="reveal" type="button">Show answer</button>
         <div class="sol" hidden>
           <b class="ans">Head of Household</b>
-          <p>Status is set on 31 December, so Marcus is unmarried for the whole year — even though he was married for eleven and a half months of it. He paid more than half the cost, and his daughter lived with him more than half the year. All three tests met.</p>
+          <p>Status is set on December 31, so Marcus is unmarried for the whole year — even though he was married for eleven and a half months of it. He paid more than half the cost, and his daughter lived with him more than half the year. All three tests met.</p>
           <p class="miss">The trap: treating him as married because he was married for most of the year.</p>
         </div>
       </div>
 
       <div class="try"><strong class="tl">Try it · 3 of 4</strong>
-        <p class="q">Angela's husband moved out on 12 September 2026 and hasn't been back. Their son lived with Angela all year and she pays the mortgage. She's certain she qualifies as Head of Household because "he's gone".</p>
+        <p class="q">Angela's husband moved out on September 12, 2026 and hasn't been back. Their son lived with Angela all year and she pays the mortgage. She's certain she qualifies as Head of Household because "he's gone".</p>
         <button class="reveal" type="button">Show answer</button>
         <div class="sol" hidden>
           <b class="ans">Married filing separately</b>
-          <p>Angela was still married on 31 December, so she needs "considered unmarried". Her husband lived in the home during the last six months of the year — he was there through July, August and half of September. That test fails, so Head of Household isn't available.</p>
+          <p>Angela was still married on December 31, so she needs "considered unmarried". Her husband lived in the home during the last six months of the year — he was there through July, August and half of September. That test fails, so Head of Household isn't available.</p>
           <p>Her options are Married Filing Separately, or Married Filing Jointly if her husband will sign.</p>
           <p class="miss">The trap: the client's certainty. She isn't lying — she's just answering a different question. Ask for the date.</p>
         </div>
@@ -365,7 +365,7 @@
           <p>1. On what date is marital status determined?</p>
           <label class="opt"><input type="radio" name="q2_1" value="a"> The date they separated</label>
           <label class="opt"><input type="radio" name="q2_1" value="b"> Whichever applied for most of the year</label>
-          <label class="opt"><input type="radio" name="q2_1" value="c"> 31 December</label>
+          <label class="opt"><input type="radio" name="q2_1" value="c"> December 31</label>
           <div class="fb" hidden>The last day of the tax year, always.</div>
         </div>
 
@@ -489,7 +489,7 @@
       <h3>Notes that hold up</h3>
       <p>Two years from now you will not remember this client. Your note has to. Write it like this:</p>
       <div class="key">
-        <p><em>"14 Feb — asked how many months D. lived with client in 2026. Client said Jan–Aug. Produced school enrolment letter showing client's address. Copy kept."</em></p>
+        <p><em>"14 Feb — asked how many months D. lived with client in 2026. Client said Jan–Aug. Produced school enrollment letter showing client's address. Copy kept."</em></p>
         <p>Fifteen seconds to write. Settles the whole question later.</p>
       </div>
 
@@ -511,7 +511,7 @@
           <p><strong>Was he a full-time student for at least five months of the year?</strong></p>
           <p>If yes — he's under 24, a student, and younger than Carl, so the age test passes and he can be a qualifying child.</p>
           <p>If no — he's 19 and not a student. The age test fails. He is not a qualifying child for EITC.</p>
-          <p class="miss">The trap: not asking at all. This single question is worth thousands of dollars. Ask it, record the answer, and ask to see the enrolment letter.</p>
+          <p class="miss">The trap: not asking at all. This single question is worth thousands of dollars. Ask it, record the answer, and ask to see the enrollment letter.</p>
         </div>
       </div>
 
@@ -575,7 +575,7 @@
         </div>
 
         <div class="qq" data-a="c">
-          <p>5. A child lived with the taxpayer from 1 February to 31 December. Does residency pass?</p>
+          <p>5. A child lived with the taxpayer from February 1 to December 31. Does residency pass?</p>
           <label class="opt"><input type="radio" name="q3_5" value="a"> No — not the full year</label>
           <label class="opt"><input type="radio" name="q3_5" value="b"> Only with a school record</label>
           <label class="opt"><input type="radio" name="q3_5" value="c"> Yes — eleven months is more than half the year</label>
@@ -621,11 +621,11 @@
       </div>
 
       <h3>The form the money arrived on doesn't decide anything</h3>
-      <p><code>1099-NEC</code>, <code>1099-K</code>, an app payout, a personal cheque, cash in an envelope — if the work was a business, it all lands on a Schedule C.</p>
+      <p><code>1099-NEC</code>, <code>1099-K</code>, an app payout, a personal check, cash in an envelope — if the work was a business, it all lands on a Schedule C.</p>
       <p><strong>Cash income is reportable whether or not anyone issued a form.</strong> Clients often genuinely don't know this. Say it plainly and without judgement.</p>
 
       <h3>Expenses</h3>
-      <p>The standard is <em>ordinary and necessary</em>. For our clients that usually means supplies, mileage, phone, a share of home costs, contract labour, and licences.</p>
+      <p>The standard is <em>ordinary and necessary</em>. For our clients that usually means supplies, mileage, phone, a share of home costs, contract labor, and licenses.</p>
       <p>Mileage is the big one and the one that gets challenged. The client needs a log. Commuting — home to the first job of the day — is <strong>not</strong> deductible.</p>
       <p>When a client has no records at all, reconstruct what can honestly be reconstructed, write down how you did it, and be straight about what can't be claimed.</p>
 
@@ -847,7 +847,7 @@
       </div>
 
       <div class="try"><strong class="tl">Try it</strong>
-        <p class="q">Andre lived in Detroit until 31 May 2026, then moved to Southfield. He worked at the same Detroit employer all year, and his W-2 shows Detroit withholding for the whole twelve months. Which form, and what should you be looking for?</p>
+        <p class="q">Andre lived in Detroit until May 31, 2026, then moved to Southfield. He worked at the same Detroit employer all year, and his W-2 shows Detroit withholding for the whole twelve months. Which form, and what should you be looking for?</p>
         <button class="reveal" type="button">Show answer</button>
         <div class="sol" hidden>
           <b class="ans">Form 5120 — part-year resident</b>
@@ -936,7 +936,7 @@
       </ul>
       <div class="key"><strong class="kl">The sentence you'll need most</strong>
         <p>"Someone else has already claimed your daughter on their return."</p>
-        <p>That is a hard thing to hear, and often the first a parent knows of it. Practise saying it calmly. Then explain the rules from Module 3, find out who else may have claimed, and if your client is entitled, we file on paper and the IRS sorts it out.</p>
+        <p>That is a hard thing to hear, and often the first a parent knows of it. Practice saying it calmly. Then explain the rules from Module 3, find out who else may have claimed, and if your client is entitled, we file on paper and the IRS sorts it out.</p>
         <p>Don't accuse anyone. Don't guess. Get your trainer if it gets difficult.</p>
       </div>
 
@@ -1000,7 +1000,7 @@
           <label class="opt"><input type="radio" name="q7_5" value="a"> Do your best — you've been trained</label>
           <label class="opt"><input type="radio" name="q7_5" value="b"> Escalate to an experienced preparer</label>
           <label class="opt"><input type="radio" name="q7_5" value="c"> Ask the client what the last preparer did</label>
-          <div class="fb" hidden>Escalating is correct professional behaviour, not failure.</div>
+          <div class="fb" hidden>Escalating is correct professional behavior, not failure.</div>
         </div>
 
         <div class="quiz-actions">
@@ -1053,7 +1053,7 @@
       </div>
 
       <h3>The final exam</h3>
-      <p>Sat between 14 and 18 December. Two hours. You may use the figures sheet and the forms — that's what you'll have in January.</p>
+      <p>Sat between 14 and December 18. Two hours. You may use the figures sheet and the forms — that's what you'll have in January.</p>
       <div class="tablewrap">
         <table>
           <thead><tr><th>Part</th><th>Covers</th><th>Weight</th><th>Needed</th></tr></thead>
@@ -1066,7 +1066,7 @@
         </table>
       </div>
       <div class="warn"><strong class="kl">Why A and B need more</strong>
-        <p>Filing status and the EITC are where the penalties are, where the audits happen, and where the firm's own licence is on the line. Being right seven times out of ten isn't enough there.</p>
+        <p>Filing status and the EITC are where the penalties are, where the audits happen, and where the firm's own license is on the line. Being right seven times out of ten isn't enough there.</p>
         <p>You get one retake, at least seven days later, with different scenarios. Most people who need it pass it.</p>
       </div>
     </div></section>

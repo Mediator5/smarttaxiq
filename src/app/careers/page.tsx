@@ -11,7 +11,7 @@ import { site } from "@/lib/site";
  * Deliberately not in the main navigation: it is a seasonal campaign page
  * reached from an ad, a referral or a community post, and it should disappear
  * from the site's story once the intake closes. Take it out of the sitemap and
- * unpublish it after 30 September rather than leaving a dead job ad up.
+ * unpublish it after September 30 rather than leaving a dead job ad up.
  */
 export const metadata: Metadata = {
   title: "Train as a Tax Preparer",

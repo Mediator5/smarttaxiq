@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const EFFECTIVE = "18 September 2026";
+const EFFECTIVE = "September 18, 2026";
 
 export default function PrivacyPage() {
   return (

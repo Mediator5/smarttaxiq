@@ -48,7 +48,7 @@ const KINDS: {
     kind: "id",
     title: "Photo ID",
     blurb:
-      "Driver's licence, state ID or passport. The photo and your name need to be readable; the rest does not matter.",
+      "Driver's license, state ID or passport. The photo and your name need to be readable; the rest does not matter.",
   },
   {
     kind: "other",
