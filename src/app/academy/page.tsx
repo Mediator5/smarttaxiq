@@ -87,7 +87,7 @@ export default async function AcademyPage() {
       <section className="py-16 sm:py-20">
         <div className="shell grid items-start gap-12 lg:grid-cols-[1fr_0.8fr] lg:gap-16">
           <div>
-            <span className="eyebrow">Seasonal preparer training · 2027 season</span>
+            <span className="eyebrow">Seasonal preparer training · 2027 tax season</span>
             <h1 className="mt-3 text-[clamp(30px,5vw,44px)] leading-[1.06]">
               The Tax Academy
             </h1>
@@ -160,7 +160,7 @@ export default async function AcademyPage() {
       <div className="shell">
         <div className="mb-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-ink/10 pb-6">
           <div>
-            <span className="eyebrow">Tax Academy · 2027 season</span>
+            <span className="eyebrow">Tax Academy · 2027 tax season</span>
             <h1 className="mt-2 text-[clamp(24px,4vw,34px)] leading-[1.1]">
               {done === 0
                 ? `Welcome, ${student.first_name}`
