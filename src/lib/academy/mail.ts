@@ -379,3 +379,128 @@ ${addressLine} · ${site.phone}`;
     text,
   });
 }
+
+/**
+ * Your exam is open.
+ *
+ * Sent when an instructor releases a paper. Without it, a release is silent:
+ * the paper sits waiting on the student's own page and the only way they find
+ * out is by going to look, which for someone who has not opened the Academy
+ * since last week means they do not.
+ *
+ * Deliberately NOT a "click here to start" button. The clock begins the
+ * moment the paper is opened, and a mail that invites a one-tap start from a
+ * phone on a bus is a mail that costs somebody their sitting. It points at
+ * the Academy and tells them what they need in front of them first.
+ */
+export async function sendExamRelease(input: {
+  to: string;
+  firstName: string;
+  paper: "A" | "B";
+  parts: string[];
+  minutes: number;
+  fromName: string;
+}) {
+  if (!mailerConfigured()) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[academy] no mailer configured — exam release for ${input.to} not sent`
+      );
+      return;
+    }
+    throw new Error(
+      "RESEND_API_KEY is missing in production — no exam release email was sent"
+    );
+  }
+
+  const name = esc(input.firstName);
+  const from = esc(input.fromName);
+  const url = `${siteUrl()}/academy/exam`;
+  const retake = input.paper === "B";
+
+  const partsLine =
+    input.parts.length === 4
+      ? "all four parts"
+      : input.parts.map((p) => `Part ${p}`).join(", ");
+
+  const opening = retake
+    ? `${name}, your retake is open. You are re-sitting ${partsLine} — everything you already passed stands.`
+    : `${name}, your final exam is open.`;
+
+  const openingText = retake
+    ? `${input.firstName}, your retake is open. You are re-sitting ${partsLine} — everything you already passed stands.`
+    : `${input.firstName}, your final exam is open.`;
+
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#eef1f6">
+  <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+    <div style="padding:20px 26px;background:${INK}">
+      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;color:#fff">
+        Smart<span style="color:${GOLD}">TaxIQ</span>
+        <span style="font-size:13px;font-weight:400;color:rgba(255,255,255,.6)"> &nbsp;Tax Academy</span>
+      </p>
+    </div>
+    <div style="padding:26px">
+      <p style="margin:0 0 18px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        ${opening} ${from} has released it to you, and you can sit it whenever
+        you are ready.
+      </p>
+      <p style="margin:0 0 18px;padding:14px;background:#f2f5fa;border-radius:10px;
+                font-family:Helvetica,Arial,sans-serif;font-size:15.5px;line-height:1.8;color:${INK}">
+        <strong>Before you start, know this:</strong><br>
+        You get <strong>${input.minutes} minutes</strong>, and the clock starts
+        the moment you open the paper. It does not stop if you close the tab.<br>
+        It is <strong>open book</strong> — have your figures sheet and your
+        forms next to you.<br>
+        Your answers save as you go, so a dropped connection will not cost you
+        the sitting.
+      </p>
+      <p style="margin:0 0 22px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:${INK}">
+        Sit down somewhere quiet with two clear hours first. Then sign in and
+        open the Exam page.
+      </p>
+      <p style="margin:0 0 22px;text-align:center">
+        <a href="${url}" style="display:inline-block;padding:14px 28px;background:${GOLD};border-radius:10px;
+           font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:${INK};text-decoration:none">
+          Go to the Academy
+        </a>
+      </p>
+      <p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${MUTED}">
+        Opening that page does not start anything. You will see the exam, what
+        it covers and how it is marked, and a button to start when you choose
+        to.
+      </p>
+      <p style="margin:0;padding-top:16px;border-top:1px solid #e6eaf1;
+                font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.7;color:${MUTED}">
+        ${esc(site.divisionStatement)}<br>
+        ${esc(addressLine)} &middot; ${esc(site.phone)}
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `${openingText} ${input.fromName} has released it to you, and you can sit it whenever you are ready.
+
+Before you start, know this:
+- You get ${input.minutes} minutes, and the clock starts the moment you open the paper. It does not stop if you close the tab.
+- It is open book — have your figures sheet and your forms next to you.
+- Your answers save as you go, so a dropped connection will not cost you the sitting.
+
+Sit down somewhere quiet with two clear hours first. Then sign in and open the Exam page:
+
+${url}
+
+Opening that page does not start anything. You will see the exam, what it covers and how it is marked, and a button to start when you choose to.
+
+---
+${site.divisionStatement}
+${addressLine} · ${site.phone}`;
+
+  await deliver({
+    to: input.to,
+    subject: retake
+      ? "Your retake is open — Smart Tax IQ Tax Academy"
+      : "Your final exam is open — Smart Tax IQ Tax Academy",
+    html,
+    text,
+  });
+}

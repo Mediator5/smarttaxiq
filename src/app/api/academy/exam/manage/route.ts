@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentStudent } from "@/lib/academy/auth";
-import { academyConfigured } from "@/lib/academy/store";
+import { academyConfigured, findStudentById } from "@/lib/academy/store";
+import { sendExamRelease } from "@/lib/academy/mail";
 import {
   createRelease,
   markAttempt,
@@ -10,7 +11,12 @@ import {
   revokeRelease,
   signedUrlForExamFile,
 } from "@/lib/academy/exam-store";
-import { ALL_PARTS, type ExamPart, type PaperId } from "@/content/academy/exam";
+import {
+  ALL_PARTS,
+  EXAM_MINUTES,
+  type ExamPart,
+  type PaperId,
+} from "@/content/academy/exam";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +94,35 @@ export async function POST(request: Request) {
         note: typeof body?.note === "string" ? body.note : null,
       });
 
-      return NextResponse.json({ ok: true, release });
+      // Tell them it is open. A release is otherwise silent — the paper waits
+      // on their page and the only way they find out is by going to look.
+      //
+      // The mail is not allowed to fail the release. If Resend is down, the
+      // paper is still released and the instructor is told the mail did not
+      // go, which is a thing she can fix with a text message; losing the
+      // release itself is not.
+      let emailed = false;
+      let emailError: string | null = null;
+      try {
+        const student = await findStudentById(studentId);
+        if (student) {
+          await sendExamRelease({
+            to: student.email,
+            firstName: student.first_name,
+            paper,
+            parts: requested,
+            minutes: EXAM_MINUTES,
+            fromName: by,
+          });
+          emailed = true;
+        }
+      } catch (err) {
+        console.error("[academy] exam release email:", err);
+        emailError =
+          "The paper is released, but the email did not go out. Tell them yourself.";
+      }
+
+      return NextResponse.json({ ok: true, release, emailed, emailError });
     }
 
     /* ---------------------------------------------------------- revoke -- */

@@ -510,7 +510,13 @@ function RosterCard({ row }: { row: RosterRow }) {
     setMessage(null);
     try {
       const data = await manage(body);
-      setMessage(data?.ok ? done : (data?.error ?? "That did not work."));
+      if (!data?.ok) {
+        setMessage(data?.error ?? "That did not work.");
+        return;
+      }
+      // A release that went through but could not be emailed has to say so,
+      // or she will assume the student has been told.
+      setMessage(data.emailError ? `${done} ${data.emailError}` : done);
     } finally {
       setBusy(false);
     }
@@ -608,7 +614,7 @@ function RosterCard({ row }: { row: RosterRow }) {
                   paper,
                   parts,
                 },
-                "Released. They can start it now."
+                "Released, and they have been emailed. They can start it whenever they are ready."
               )
             }
             className="btn-outline px-6 py-2.5 text-[15px]"
