@@ -1256,3 +1256,19 @@ async function touchOnboarding(id: string) {
     .update({ updated_at: new Date().toISOString() })
     .eq("id", id);
 }
+
+/* ------------------------------------------------------- the exam tables -- */
+
+/**
+ * The same Supabase client, for the exam tables in exam-store.ts.
+ *
+ * The exam needed six hundred lines of its own and putting them in this file
+ * would have made it unreadable, but a second module must not mean a second
+ * client: one connection, one place where the service-role key is read, one
+ * place where the no-store fetch wrapper is applied. So the client is lent
+ * out rather than rebuilt. Returns null when the Academy is not configured,
+ * exactly as every function here does.
+ */
+export function academyDb() {
+  return db();
+}

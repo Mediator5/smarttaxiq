@@ -12,6 +12,8 @@ import CourseRuntime from "@/components/academy/CourseRuntime";
 import ModuleExtras from "@/components/academy/ModuleExtras";
 import AcademyNav from "@/components/academy/AcademyNav";
 import SignInForm from "@/components/academy/SignInForm";
+import Link from "next/link";
+import { EXAM_WINDOW, PART_SPECS } from "@/content/academy/exam";
 
 /**
  * The course.
@@ -118,6 +120,14 @@ export default async function AcademyPage() {
                   Your scores save to your own record, so you can stop
                   mid-module and pick it up on your phone.
                 </li>
+                <li>
+                  <strong>
+                    The course ends with a final exam, sat {EXAM_WINDOW}.
+                  </strong>{" "}
+                  Two hours, open book, in four parts — and you must pass every
+                  part on its own. You may sit it on paper at the office or on
+                  screen from wherever you are.
+                </li>
               </ul>
             </div>
 
@@ -193,6 +203,34 @@ export default async function AcademyPage() {
             ))}
           </div>
         )}
+
+        {/*
+          The exam, named on the page a student actually lands on.
+
+          It used to be described only in Module 8, which is Week 10 — so a
+          student in Week 3 could reasonably conclude there was no exam at
+          all, and at least one did. The detail lives on /academy/exam; this
+          is the signpost to it.
+        */}
+        <Link
+          href="/academy/exam"
+          className="mb-8 block rounded-2xl border border-ink/12 bg-ice p-6 transition hover:border-gold-500"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <div>
+              <span className="eyebrow">Final exam · {EXAM_WINDOW}</span>
+              <p className="mt-2 max-w-[62ch] text-[15.5px] leading-relaxed text-ink/75">
+                Two hours, open book, four parts — filing status and the EITC at{" "}
+                {PART_SPECS.A.passPct}%, a complete return and ethics at{" "}
+                {PART_SPECS.C.passPct}%. Every part must pass on its own.
+                Passing it is what puts you in front of a client in January.
+              </p>
+            </div>
+            <span className="text-[14.5px] font-bold text-ink underline">
+              See the exam
+            </span>
+          </div>
+        </Link>
 
         <CourseRuntime initialProgress={progress} />
         <ModuleExtras extras={extras} />

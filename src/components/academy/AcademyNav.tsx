@@ -25,7 +25,9 @@ type Item = { href: string; label: string; instructorOnly?: boolean };
 
 const ITEMS: Item[] = [
   { href: "/academy", label: "Course" },
+  { href: "/academy/exam", label: "Exam" },
   { href: "/academy/instructor", label: "Progress", instructorOnly: true },
+  { href: "/academy/exam/marking", label: "Marking", instructorOnly: true },
   { href: "/academy/teaching", label: "Teaching", instructorOnly: true },
   { href: "/academy/roster", label: "Roster", instructorOnly: true },
   { href: "/academy/onboarding", label: "Onboarding", instructorOnly: true },

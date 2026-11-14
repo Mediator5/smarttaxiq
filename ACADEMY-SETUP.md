@@ -307,3 +307,100 @@ two ways:
 | Dashboard 404s for Lashanda | Her row has `role = 'student'`, or a different `cohort` from the students |
 | "You're not on the roster" for an address that plainly is | The stored email has a capital letter. Sign-in lowercases what is typed, Postgres `=` is case-sensitive, so `Info@` never matches `info@`. The schema now lowercases on write with a trigger — re-run `academy.sql` and it also repairs existing rows |
 | Code never arrives at a new instructor address | Check the address is a real mailbox and not a forward-only alias. The roster lookup and the delivery are separate failures and look identical from the sign-in page |
+
+---
+
+## The final exam, sat online
+
+The December exam has always been a supervised paper sitting at Mack Ave, and
+it still is. What was added in November 2026 is a second route for the
+students who cannot get there on the day: the same paper, sat on screen, with
+the clock running. Both routes end in the same place — a certificate the
+student downloads themselves.
+
+### Running it
+
+1. **Release the paper.** Nobody can start the exam because they feel ready.
+   Go to **Marking** in the Academy nav, find the student, choose the paper and
+   the parts, and press Release. A first sitting is Paper A, all four parts.
+   A retake is Paper B and only the parts they failed, which are filled in for
+   you. A release is good for one sitting and is consumed when they open it.
+
+2. **They sit it.** Two hours from the moment they press start. Everything
+   saves as they answer, so a dead laptop costs nothing. When the time runs
+   out the paper is handed in as it stands.
+
+3. **Parts A and B mark themselves**, against `src/content/academy/exam-key.ts`
+   — 60 of the 100 marks, and both 80% gates. Online, the student picks the
+   filing status and the deciding test from lists rather than writing them, so
+   "right answer, wrong reason" still scores 3 of 5 exactly as it does on
+   paper.
+
+4. **You mark Parts C and D** on the same Marking page. Each written answer is
+   shown with the model answer and the mark breakdown from the key beside it.
+   Enter a mark per question and press Save; the four pass bars are applied on
+   the server.
+
+5. **A pass on all four parts writes the certificate**, and it appears on the
+   student's own exam page as a download. Nothing else mints one — not a
+   score, not a part total.
+
+For a student who sat the paper at the office, press **Record a pass from the
+paper sitting** on their row. They get the same certificate; only the word in
+`academy_certifications.route` differs.
+
+### Supervision
+
+Sitting it on screen is not supervised the way the paper sitting is, and
+nothing in the software pretends otherwise. The practical answer is Zoom with
+screens shared where you want the assurance, and trust where you do not —
+that is a judgement about the student, not a setting in here.
+
+### What to know before you change anything
+
+**The clock lives on the server.** `academy_exam_attempts.expires_at` is
+written once, when the paper is opened, and never moved. Every save, every
+submit and every page load measures against it. Refreshing, closing the tab,
+moving to a phone and changing the computer's clock all do nothing, and the
+countdown on screen is re-read from the server every minute so that a slept
+laptop shows the truth rather than its own arithmetic. If you ever find
+yourself computing a deadline from a value the browser sent, stop.
+
+**The key is server-only.** `exam-key.ts` must never be imported by a client
+component or passed as a prop to one — props are serialised into the HTML. The
+marking page is the single deliberate exception: marking a written answer
+means having the model answer on screen, and the instructor role check is what
+makes that safe. There is a check for this worth repeating after any change:
+build, then grep `.next/static` for a phrase from the key. It should return
+nothing.
+
+**A retake re-sits only the failed parts**, so a pass is assembled across
+sittings — Parts A, B and D from December and Part C from January is a pass.
+`standing()` in `src/lib/academy/exam.ts` is what reads it that way, taking
+each part at its best across every submitted attempt. It is also the only
+thing that decides whether a certificate is due.
+
+**Part D has no alternative set.** Paper B supplies different fact patterns
+for A, B and C, because those turn on facts. Part D asks for professional
+conduct — the $200 and the PTIN, Form 8867, the escalation list — and there is
+no second set of right answers to hold in reserve, so a Part D retake answers
+the same five questions. That is also what re-sitting it on paper would mean.
+
+**Part C attachments** go to a private `exam-uploads` bucket on the same terms
+as the onboarding documents: bytes sniffed rather than trusted, 4 MB a file,
+six to a paper, and sixty-second signed URLs minted only for an instructor.
+
+### Tables
+
+Re-run `supabase/academy.sql` in the Supabase SQL editor. It is written to be
+run repeatedly, so this adds the four new tables and the bucket and touches
+nothing that already exists:
+
+- `academy_exam_releases` — permission to sit, one open per student
+- `academy_exam_attempts` — the sitting, its clock, its answers and its marks
+- `academy_exam_files` — Part C attachments
+- `academy_certifications` — the pass record a certificate is minted from
+
+No new environment variables. No new dependencies — the certificate PDF is
+drawn by hand in `src/lib/academy/certificate.ts` rather than pulling in a
+library for one sheet of paper.

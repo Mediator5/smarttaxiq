@@ -438,3 +438,166 @@ create index if not exists academy_onboarding_files_row_idx
   on academy_onboarding_files (onboarding_id, uploaded_at desc);
 
 alter table academy_onboarding_files enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- THE FINAL EXAM, SAT ONLINE
+--
+-- The December exam has always been a supervised paper sitting, and it still
+-- is: nothing here replaces it. What these tables add is a second route for
+-- the students who cannot reach Mack Ave on the day, sitting the same paper on
+-- screen with the clock running.
+--
+-- Four things decide the design:
+--
+--   * The clock belongs to the server. started_at and expires_at are written
+--     when the paper is opened and never recomputed. A student who refreshes,
+--     closes the tab, moves to their phone or changes their computer's clock
+--     cannot buy a minute, because no code anywhere trusts the browser's idea
+--     of the time.
+--
+--   * Answers are saved as they are given, into the attempt's own jsonb. A
+--     dead battery costs nothing but the minutes it takes to sign back in.
+--
+--   * Nobody sits the exam because they feel ready. An attempt requires an
+--     open release written by an instructor, and a release is consumed when it
+--     is used, so sitting it twice takes a second deliberate act by Lashanda.
+--
+--   * A retake is Paper B, seven days later, and only the parts that were
+--     failed — which is why `parts` is on both the release and the attempt
+--     rather than assumed to be all four.
+--
+-- Parts A and B mark themselves from src/content/academy/exam-key.ts, which
+-- never reaches a browser. Parts C and D are written answers and are marked by
+-- the instructor, with the key beside them. Both kinds of mark land in the
+-- same attempt row: auto_marks for the first, marks for the second.
+-- ---------------------------------------------------------------------------
+
+-- ------------------------------------------------------------- releases ----
+-- Permission to sit, written by an instructor. One open release per student at
+-- a time, enforced below.
+create table if not exists academy_exam_releases (
+  id           uuid primary key default gen_random_uuid(),
+  student_id   uuid not null references academy_students (id) on delete cascade,
+  paper        text not null check (paper in ('A', 'B')),
+  -- Which parts this sitting covers. A first sitting is all four; a retake is
+  -- the failed parts only.
+  parts        text[] not null default array['A', 'B', 'C', 'D'],
+  released_by  text not null,
+  released_at  timestamptz not null default now(),
+  note         text,
+  -- Set when the student opens the paper. A release is good for one sitting.
+  attempt_id   uuid,
+  revoked_at   timestamptz,
+  revoked_by   text
+);
+
+-- At most one usable release per student. Withdrawing one means revoking it,
+-- not deleting it, so the record of who allowed what survives.
+create unique index if not exists academy_exam_releases_open_idx
+  on academy_exam_releases (student_id)
+  where attempt_id is null and revoked_at is null;
+
+create index if not exists academy_exam_releases_student_idx
+  on academy_exam_releases (student_id, released_at desc);
+
+-- ------------------------------------------------------------- attempts ----
+create table if not exists academy_exam_attempts (
+  id               uuid primary key default gen_random_uuid(),
+  student_id       uuid not null references academy_students (id) on delete cascade,
+  release_id       uuid references academy_exam_releases (id) on delete set null,
+  paper            text not null check (paper in ('A', 'B')),
+  parts            text[] not null,
+  -- The clock. Written once, on the server, and never moved.
+  started_at       timestamptz not null default now(),
+  duration_minutes integer not null default 120,
+  expires_at       timestamptz not null,
+  -- { "A1": { "status": "hoh", "test": "test3" }, "C3": { "text": "..." } }
+  answers          jsonb not null default '{}'::jsonb,
+  submitted_at     timestamptz,
+  -- Why it ended: the student pressed submit, or the two hours ran out.
+  submitted_reason text check (submitted_reason in ('student', 'time')),
+  -- Parts A and B, marked by the server against the key.
+  auto_marks       jsonb,
+  -- Parts C and D, marked by the instructor.
+  marks            jsonb,
+  -- { "A": { "awarded": 27, "available": 30, "needed": 24, "passed": true } }
+  part_totals      jsonb,
+  failed_parts     text[],
+  result           text check (result in ('pass', 'retake')),
+  marker_notes     text,
+  marked_by        text,
+  marked_at        timestamptz,
+  created_at       timestamptz not null default now()
+);
+
+create index if not exists academy_exam_attempts_student_idx
+  on academy_exam_attempts (student_id, started_at desc);
+
+-- One sitting open at a time. A student cannot hold two live papers.
+create unique index if not exists academy_exam_attempts_live_idx
+  on academy_exam_attempts (student_id)
+  where submitted_at is null;
+
+-- Everything submitted and not yet marked, for the instructor's queue.
+create index if not exists academy_exam_attempts_tomark_idx
+  on academy_exam_attempts (submitted_at)
+  where submitted_at is not null and marked_at is null;
+
+-- ---------------------------------------------------------- Part C files ---
+-- Part C is a complete return. A student may type their working into the
+-- answer boxes, and may also attach what they prepared — a scan, a photo of
+-- the worksheet, a PDF out of the software.
+--
+-- Same posture as the onboarding documents: a private bucket, a path this app
+-- generates, sixty-second signed URLs, and rows that survive the file.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('exam-uploads', 'exam-uploads', false, 10485760)
+on conflict (id) do update
+  set public = false,
+      file_size_limit = 10485760;
+
+create table if not exists academy_exam_files (
+  id           uuid primary key default gen_random_uuid(),
+  attempt_id   uuid not null
+                 references academy_exam_attempts (id) on delete cascade,
+  -- Which Part C question it belongs to, where the student said.
+  question_id  text,
+  storage_path text not null unique,
+  file_name    text not null,
+  mime_type    text not null,
+  size_bytes   integer not null,
+  uploaded_at  timestamptz not null default now(),
+  uploaded_ip  text,
+  deleted_at   timestamptz,
+  deleted_by   text
+);
+
+create index if not exists academy_exam_files_attempt_idx
+  on academy_exam_files (attempt_id, uploaded_at desc);
+
+-- --------------------------------------------------------- certification ---
+-- The pass record, and the only thing a certificate is minted from.
+--
+-- `route` matters: a student who sat the paper in the office has no attempt
+-- row, so the instructor records the pass directly and the certificate comes
+-- out the same. A certificate is never generated from a score — only from a
+-- row here.
+create table if not exists academy_certifications (
+  student_id     uuid primary key references academy_students (id) on delete cascade,
+  route          text not null check (route in ('online', 'paper')),
+  attempt_id     uuid references academy_exam_attempts (id) on delete set null,
+  paper          text,
+  part_totals    jsonb,
+  -- Stable, human-quotable, and on the certificate: STIQ-<cohort>-<6 chars>.
+  certificate_no text not null unique,
+  passed_at      timestamptz not null default now(),
+  recorded_by    text not null,
+  -- A pass can be withdrawn. The row stays and the certificate stops serving.
+  revoked_at     timestamptz,
+  revoked_by     text
+);
+
+alter table academy_exam_releases    enable row level security;
+alter table academy_exam_attempts    enable row level security;
+alter table academy_exam_files        enable row level security;
+alter table academy_certifications    enable row level security;
